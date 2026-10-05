@@ -1,0 +1,15 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- Geometry measured from PDF (1): buttons p21, prompt p26, plan p32, search p36. -->
+    <dimen name="ds_button_large_min_height">56dp</dimen>
+    <dimen name="ds_button_medium_min_height">44dp</dimen>
+    <dimen name="ds_button_small_min_height">40dp</dimen>
+    <dimen name="ds_button_compact_min_height">32dp</dimen>
+    <dimen name="ds_input_corner_radius">20dp</dimen>
+    <dimen name="ds_search_corner_radius">22dp</dimen>
+    <dimen name="ds_plan_corner_radius">16dp</dimen>
+    <!-- Android integration defaults, not exported Figma tokens. -->
+    <dimen name="ds_android_control_padding">16dp</dimen>
+    <dimen name="ds_android_stroke_width">1dp</dimen>
+    <dimen name="ds_android_selected_stroke_width">2dp</dimen>
+</resources>

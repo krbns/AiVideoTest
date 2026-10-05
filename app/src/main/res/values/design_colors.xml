@@ -1,0 +1,60 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- Source: PDF (2), page 20. RGBA in the PDF becomes ARGB on Android. -->
+    <!-- accent/primary: #d1fe17 -->
+    <color name="ds_accent_primary">#D1FE17</color>
+    <!-- accent/primaryAlpha: #d1fe171f -->
+    <color name="ds_accent_primary_alpha">#1FD1FE17</color>
+    <!-- accent/secondary: #a9fe17 -->
+    <color name="ds_accent_secondary">#A9FE17</color>
+    <!-- accent/grey: #b4b2b01f -->
+    <color name="ds_accent_grey">#1FB4B2B0</color>
+    <!-- accent/green: #15cc68 -->
+    <color name="ds_accent_green">#15CC68</color>
+    <!-- accent/red: #ff5446 -->
+    <color name="ds_accent_red">#FF5446</color>
+    <!-- accent/Pink: #fb7acd -->
+    <color name="ds_accent_pink">#FB7ACD</color>
+    <!-- accent/Yellow: #fdb03c -->
+    <color name="ds_accent_yellow">#FDB03C</color>
+    <!-- label/primary: #faf5ff -->
+    <color name="ds_label_primary">#FAF5FF</color>
+    <!-- label/primaryInvariably: #faf5ff8c -->
+    <color name="ds_label_primary_invariably">#8CFAF5FF</color>
+    <!-- label/primaryInverted: #22242c -->
+    <color name="ds_label_primary_inverted">#22242C</color>
+    <!-- label/primaryInvertedInvariably: #22242c8c -->
+    <color name="ds_label_primary_inverted_invariably">#8C22242C</color>
+    <!-- label/secondary: #faf5ffcc -->
+    <color name="ds_label_secondary">#CCFAF5FF</color>
+    <!-- label/tertiary: #faf5ff99 -->
+    <color name="ds_label_tertiary">#99FAF5FF</color>
+    <!-- label/quaternary: #faf5ff66 -->
+    <color name="ds_label_quaternary">#66FAF5FF</color>
+    <!-- label/quintuple: #faf5ff47 -->
+    <color name="ds_label_quintuple">#47FAF5FF</color>
+    <!-- label/tertiary 2: #faf5ff99 -->
+    <color name="ds_label_tertiary_2">#99FAF5FF</color>
+    <!-- background/primary: #0d0d0d -->
+    <color name="ds_background_primary">#0D0D0D</color>
+    <!-- background/primaryAlpha: #0d0d0df0 -->
+    <color name="ds_background_primary_alpha">#F00D0D0D</color>
+    <!-- background/secondary: #232323 -->
+    <color name="ds_background_secondary">#232323</color>
+    <!-- background/tertiary: #faf5ff14 -->
+    <color name="ds_background_tertiary">#14FAF5FF</color>
+    <!-- background/quaternary: #faf5ff24 -->
+    <color name="ds_background_quaternary">#24FAF5FF</color>
+    <!-- background/dim: #faf5ff66 -->
+    <color name="ds_background_dim">#66FAF5FF</color>
+    <!-- separator/primary: #2e2e2d -->
+    <color name="ds_separator_primary">#2E2E2D</color>
+    <!-- separator/secondary: #5759508c -->
+    <color name="ds_separator_secondary">#8C575950</color>
+    <!-- system/neutral: #ffffff -->
+    <color name="ds_system_neutral">#FFFFFF</color>
+    <!-- system/white: #ffffff -->
+    <color name="ds_system_white">#FFFFFF</color>
+    <!-- system/black: #000111 -->
+    <color name="ds_system_black">#000111</color>
+</resources>

@@ -1,0 +1,7 @@
+<resources>
+    <item name="popular_scroll" type="id" />
+    <item name="anime_scroll" type="id" />
+    <item name="fashion_scroll" type="id" />
+    <item name="new_scroll" type="id" />
+    <item name="retro_scroll" type="id" />
+</resources>

@@ -1,0 +1,8 @@
+<?xml version="1.0" encoding="utf-8"?>
+<menu xmlns:android="http://schemas.android.com/apk/res/android">
+    <item android:id="@+id/tab_video" android:title="@string/ai_video" android:icon="@drawable/ic_video" />
+    <item android:id="@+id/tab_photo" android:title="@string/ai_photo" android:icon="@drawable/ic_photo" />
+    <item android:id="@+id/tab_favorites" android:title="@string/favorites" android:icon="@drawable/ic_heart" />
+    <item android:id="@+id/tab_library" android:title="@string/library" android:icon="@drawable/ic_clock" />
+    <item android:id="@+id/tab_settings" android:title="@string/settings" android:icon="@drawable/ic_settings" />
+</menu>

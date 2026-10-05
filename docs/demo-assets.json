@@ -1,0 +1,124 @@
+[
+  {
+    "resource": "demo_gold",
+    "page": 43,
+    "image_object_index": 0,
+    "size": [
+      960,
+      540
+    ],
+    "sha256": "370b6bb2f25ff374df5d6100603a1b678f4ff73a146686e18ca39c9da0a68334"
+  },
+  {
+    "resource": "demo_beach",
+    "page": 43,
+    "image_object_index": 3,
+    "size": [
+      960,
+      1280
+    ],
+    "sha256": "3db79ed26ed284a44a7f63bff386132bd32ab4e45d6fe1811549f76b6b7443c7"
+  },
+  {
+    "resource": "demo_penguin",
+    "page": 43,
+    "image_object_index": 5,
+    "size": [
+      960,
+      540
+    ],
+    "sha256": "f90b0ae335604da778e6f5a3b8aec483b3be8aebb2d0bef84ed28e9b57ba2240"
+  },
+  {
+    "resource": "demo_japan",
+    "page": 43,
+    "image_object_index": 7,
+    "size": [
+      960,
+      1280
+    ],
+    "sha256": "affebe7b89aeaba2996703168628979964487b68bd5b7f3629a8959f600a08cb"
+  },
+  {
+    "resource": "demo_underwater",
+    "page": 43,
+    "image_object_index": 9,
+    "size": [
+      960,
+      540
+    ],
+    "sha256": "be46d0795d5341885b8c669b2162f0beaa7c0d2ce41ad82944bb534b65249548"
+  },
+  {
+    "resource": "demo_fashion",
+    "page": 43,
+    "image_object_index": 11,
+    "size": [
+      786,
+      1280
+    ],
+    "sha256": "95b22e37fd6b76a6ab1c61385d550cce2d32de89d78861583ceb4437ecab6582"
+  },
+  {
+    "resource": "demo_anime_1",
+    "page": 44,
+    "image_object_index": 6,
+    "size": [
+      715,
+      1280
+    ],
+    "sha256": "df4fd1929f94598046c3abacffa004d4d8ec782bff51e5c79e5880c4abd28542"
+  },
+  {
+    "resource": "demo_anime_1",
+    "page": 44,
+    "image_object_index": 8,
+    "size": [
+      715,
+      1280
+    ],
+    "sha256": "df4fd1929f94598046c3abacffa004d4d8ec782bff51e5c79e5880c4abd28542",
+    "fixture_alias": "demo_anime_2"
+  },
+  {
+    "resource": "demo_anime_1",
+    "page": 44,
+    "image_object_index": 10,
+    "size": [
+      715,
+      1280
+    ],
+    "sha256": "df4fd1929f94598046c3abacffa004d4d8ec782bff51e5c79e5880c4abd28542",
+    "fixture_alias": "demo_anime_3"
+  },
+  {
+    "resource": "demo_portrait",
+    "page": 31,
+    "image_object_index": 2,
+    "size": [
+      718,
+      1280
+    ],
+    "sha256": "0427dcff810e7eb24315f0dfd2f19a6a96c0f82e57b297cd9edeb5a1a5a175fe"
+  },
+  {
+    "resource": "demo_anime_portrait",
+    "page": 31,
+    "image_object_index": 4,
+    "size": [
+      852,
+      1280
+    ],
+    "sha256": "ba16a0deb4684a8fc308a0c57013f6ad54954298a76be7b62ba08a1765b4c65f"
+  },
+  {
+    "resource": "demo_banner",
+    "page": 43,
+    "source": "Composite banner artwork crop; no app UI included",
+    "size": [
+      1074,
+      495
+    ],
+    "sha256": "3f7556328f518ed37846e205eda3512a1ca8df7f731e7feb364f0ad0505b6a3a"
+  }
+]

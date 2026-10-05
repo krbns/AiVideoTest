@@ -1,16 +1,60 @@
-<resources xmlns:tools="http://schemas.android.com/tools">
-    <!-- Base application theme. -->
-    <style name="Theme.AiVideoTest" parent="Theme.MaterialComponents.DayNight.DarkActionBar">
-        <!-- Primary brand color. -->
-        <item name="colorPrimary">@color/purple_500</item>
-        <item name="colorPrimaryVariant">@color/purple_700</item>
-        <item name="colorOnPrimary">@color/white</item>
-        <!-- Secondary brand color. -->
-        <item name="colorSecondary">@color/teal_200</item>
-        <item name="colorSecondaryVariant">@color/teal_700</item>
-        <item name="colorOnSecondary">@color/black</item>
-        <!-- Status bar color. -->
-        <item name="android:statusBarColor">?attr/colorPrimaryVariant</item>
-        <!-- Customize your theme here. -->
+<?xml version="1.0" encoding="utf-8"?>
+<resources xmlns:tools="http://schemas.android.com/tools" tools:targetApi="29">
+    <!-- The PDF exports only dark tokens. Keep the current ActionBar architecture. -->
+    <style name="Base.Theme.AiVideoTest" parent="Theme.MaterialComponents.DayNight.DarkActionBar">
+        <item name="colorPrimary">@color/ds_accent_primary</item>
+        <item name="colorPrimaryVariant">@color/ds_accent_secondary</item>
+        <item name="colorOnPrimary">@color/ds_label_primary_inverted</item>
+        <item name="colorSecondary">@color/ds_accent_secondary</item>
+        <item name="colorSecondaryVariant">@color/ds_accent_secondary</item>
+        <item name="colorOnSecondary">@color/ds_label_primary_inverted</item>
+        <item name="colorSurface">@color/ds_background_secondary</item>
+        <item name="colorOnSurface">@color/ds_label_primary</item>
+        <item name="colorOnBackground">@color/ds_label_primary</item>
+        <item name="colorError">@color/ds_accent_red</item>
+        <item name="colorOnError">@color/ds_label_primary_inverted</item>
+        <item name="colorAccent">@color/ds_accent_primary</item>
+        <item name="colorControlNormal">@color/ds_label_secondary</item>
+        <item name="colorControlActivated">@color/ds_accent_primary</item>
+        <item name="colorButtonNormal">@color/ds_accent_primary</item>
+        <item name="colorBackgroundFloating">@color/ds_background_secondary</item>
+        <item name="android:colorForeground">@color/ds_label_primary</item>
+        <item name="actionBarStyle">@style/Widget.AiVideoTest.ActionBar</item>
+        <item name="colorControlHighlight">@color/ds_accent_primary_alpha</item>
+        <item name="android:colorBackground">@color/ds_background_primary</item>
+        <item name="android:windowBackground">@color/ds_background_primary</item>
+        <item name="android:statusBarColor">@color/ds_background_primary</item>
+        <item name="android:navigationBarColor">@color/ds_background_primary</item>
+        <item name="android:windowLightStatusBar">false</item>
+        <item name="android:forceDarkAllowed">false</item>
+        <item name="android:textColorPrimary">@color/ds_label_primary</item>
+        <item name="android:textColorSecondary">@color/ds_label_secondary</item>
+        <item name="android:textColorHint">@color/ds_label_tertiary</item>
+        <item name="android:fontFamily">@string/ds_font_regular</item>
+        <item name="fontFamily">@string/ds_font_regular</item>
+        <item name="android:textAppearance">@style/TextAppearance.AiVideoTest.Body.Regular</item>
+        <item name="textAppearanceHeadline1">@style/TextAppearance.AiVideoTest.LargeTitle.Regular</item>
+        <item name="textAppearanceHeadline2">@style/TextAppearance.AiVideoTest.Title1.Regular</item>
+        <item name="textAppearanceHeadline3">@style/TextAppearance.AiVideoTest.Title2.Regular</item>
+        <item name="textAppearanceHeadline4">@style/TextAppearance.AiVideoTest.Title3.Regular</item>
+        <item name="textAppearanceHeadline5">@style/TextAppearance.AiVideoTest.Headline.Regular</item>
+        <item name="textAppearanceHeadline6">@style/TextAppearance.AiVideoTest.Headline.Emphasized</item>
+        <item name="textAppearanceSubtitle1">@style/TextAppearance.AiVideoTest.Callout.Regular</item>
+        <item name="textAppearanceSubtitle2">@style/TextAppearance.AiVideoTest.Subheadline.Regular</item>
+        <item name="textAppearanceBody1">@style/TextAppearance.AiVideoTest.Body.Regular</item>
+        <item name="textAppearanceBody2">@style/TextAppearance.AiVideoTest.Body.Emphasized</item>
+        <item name="textAppearanceButton">@style/TextAppearance.AiVideoTest.Headline.Emphasized</item>
+        <item name="textAppearanceCaption">@style/TextAppearance.AiVideoTest.Caption1.Regular</item>
+        <item name="textAppearanceOverline">@style/TextAppearance.AiVideoTest.Caption2.Regular</item>
+        <item name="materialButtonStyle">@style/Widget.AiVideoTest.Button.Primary</item>
+        <item name="materialCardViewStyle">@style/Widget.AiVideoTest.Card</item>
+        <item name="textInputStyle">@style/Widget.AiVideoTest.TextInputLayout</item>
+        <item name="textInputOutlinedStyle">@style/Widget.AiVideoTest.TextInputLayout</item>
+        <item name="editTextStyle">@style/Widget.AiVideoTest.TextInputEditText</item>
+        <item name="android:textViewStyle">@style/Widget.AiVideoTest.TextView</item>
+        <item name="bottomNavigationStyle">@style/Widget.AiVideoTest.BottomNavigation</item>
+        <item name="tabStyle">@style/Widget.AiVideoTest.TabLayout</item>
+    </style>
+    <style name="Theme.AiVideoTest" parent="Base.Theme.AiVideoTest">
     </style>
 </resources>

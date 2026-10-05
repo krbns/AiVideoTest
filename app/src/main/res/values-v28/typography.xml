@@ -1,0 +1,28 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- Exact requested numeric weights on API 28+. API 24-27 use family/style fallback. -->
+    <style name="TextAppearance.AiVideoTest.Regular" parent="TextAppearance.AiVideoTest">
+        <item name="fontFamily">@string/ds_font_regular</item>
+        <item name="android:fontFamily">@string/ds_font_regular</item>
+        <item name="android:textStyle">normal</item>
+        <item name="android:textFontWeight">400</item>
+    </style>
+    <style name="TextAppearance.AiVideoTest.Medium" parent="TextAppearance.AiVideoTest">
+        <item name="fontFamily">@string/ds_font_medium</item>
+        <item name="android:fontFamily">@string/ds_font_medium</item>
+        <item name="android:textStyle">normal</item>
+        <item name="android:textFontWeight">500</item>
+    </style>
+    <style name="TextAppearance.AiVideoTest.Semibold" parent="TextAppearance.AiVideoTest">
+        <item name="fontFamily">@string/ds_font_semibold</item>
+        <item name="android:fontFamily">@string/ds_font_semibold</item>
+        <item name="android:textStyle">normal</item>
+        <item name="android:textFontWeight">600</item>
+    </style>
+    <style name="TextAppearance.AiVideoTest.Bold" parent="TextAppearance.AiVideoTest">
+        <item name="fontFamily">@string/ds_font_bold</item>
+        <item name="android:fontFamily">@string/ds_font_bold</item>
+        <item name="android:textStyle">normal</item>
+        <item name="android:textFontWeight">700</item>
+    </style>
+</resources>
