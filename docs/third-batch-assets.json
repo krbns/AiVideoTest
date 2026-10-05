@@ -1,0 +1,26 @@
+[
+  {
+    "resource": "demo_empty_favorites",
+    "page": 240,
+    "source": "vector artwork crop",
+    "crop": [
+      56,
+      267,
+      322,
+      564
+    ],
+    "sha256": "502b3fd2a78b367c96e2f0e50ecd64fbab6685545a43d5e26a9c5d8c8a03ff67"
+  },
+  {
+    "resource": "demo_empty_library",
+    "page": 241,
+    "source": "vector artwork crop",
+    "crop": [
+      85,
+      310,
+      345,
+      565
+    ],
+    "sha256": "bac95a5afff2033b69d537efff3e2d4464ccc181c411dbea60fafdc725b30ef6"
+  }
+]

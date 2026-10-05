@@ -25,7 +25,7 @@ class EffectFragment : Fragment() {
         b.previewLabel.visibility = if (effect.kind == MediaKind.VIDEO) View.VISIBLE else View.GONE
         b.back.setOnClickListener { requireActivity().onBackPressedDispatcher.onBackPressed() }
         b.like.setOnClickListener { model.toggleFavorite(id) }
-        b.useEffect.setOnClickListener { (requireActivity() as MainActivity).explainCreation() }
+        b.useEffect.setOnClickListener { (requireActivity() as MainActivity).openGenerator(id) }
         model.snapshot.observe(viewLifecycleOwner) { snapshot ->
             b.balance.bindBalance(model)
             val selected = id in snapshot.favorites

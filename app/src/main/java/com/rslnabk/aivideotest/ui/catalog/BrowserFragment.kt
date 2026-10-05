@@ -12,6 +12,8 @@ import com.rslnabk.aivideotest.*
 import com.rslnabk.aivideotest.databinding.FragmentBrowserBinding
 import com.rslnabk.aivideotest.model.*
 import com.rslnabk.aivideotest.ui.common.*
+import com.rslnabk.aivideotest.ui.generator.PromptEditor
+import com.rslnabk.aivideotest.ui.library.GenerationCard
 
 /** Catalog/category/favorites reuse the same card and repository, with no duplicated like state. */
 class BrowserFragment : Fragment() {
@@ -25,6 +27,8 @@ class BrowserFragment : Fragment() {
     private var mode = 0
     private var scrollY = 0
     private val cards = mutableListOf<EffectCard>()
+    private var editor: PromptEditor? = null
+    private var renderedJobs: List<GenerationJob>? = null
     private var renderedFavorites: Set<String>? = null
 
     override fun onCreate(state: Bundle?) {
@@ -57,6 +61,8 @@ class BrowserFragment : Fragment() {
         b.scroll.post { binding?.scroll?.scrollTo(0, scrollY) }
         model.snapshot.observe(viewLifecycleOwner) { snapshot ->
             binding?.balance?.bindBalance(model)
+            editor?.bind()
+            if (tab == AppTab.LIBRARY && renderedJobs != snapshot.jobs) renderBody(keepScroll = true)
             cards.forEach { it.bindFavorite(it.effect.id in snapshot.favorites) }
             if (tab == AppTab.FAVORITES && !isCategory && renderedFavorites != snapshot.favorites) renderBody(keepScroll = true)
         }
@@ -68,6 +74,7 @@ class BrowserFragment : Fragment() {
     }
     override fun onDestroyView() {
         scrollY = binding?.scroll?.scrollY ?: scrollY
+        editor = null; renderedJobs = null
         cards.clear(); binding = null; renderedFavorites = null
         super.onDestroyView()
     }
@@ -97,7 +104,8 @@ class BrowserFragment : Fragment() {
                 if (mode != selected) { mode = selected; scrollY = 0; renderControls(); renderBody(); b.scroll.scrollTo(0, 0) }
             })
         } else if (tab == AppTab.FAVORITES || tab == AppTab.LIBRARY) {
-            b.controls.addView(ctx.segmented(listOf(getString(R.string.photos), getString(R.string.videos)), if (kind == MediaKind.PHOTO) 0 else 1) { selected ->
+            b.controls.addView(ctx.segmented(listOf(getString(R.string.photos), getString(R.string.videos)), if (kind == MediaKind.PHOTO) 0 else 1,
+                listOf(R.drawable.ic_photo,R.drawable.ic_video)) { selected ->
                 kind = if (selected == 0) MediaKind.PHOTO else MediaKind.VIDEO
                 scrollY = 0; renderControls(); renderBody(); b.scroll.scrollTo(0, 0)
             })
@@ -106,28 +114,50 @@ class BrowserFragment : Fragment() {
     private fun renderBody(keepScroll: Boolean = false) {
         val b = binding ?: return
         val position = if (keepScroll) b.scroll.scrollY else 0
-        b.body.removeAllViews(); cards.clear()
+        editor = null; b.body.removeAllViews(); cards.clear()
         when {
             isCategory -> addGrid(model.catalog.effects(kind, category))
             tab.kind != null && mode == 0 -> addCatalog()
-            tab.kind != null -> addEmpty(R.drawable.ic_prompt, R.string.prompt, R.string.preview_prompt, R.string.go_trends) {
-                mode = 0; renderControls(); renderBody()
+            tab.kind != null -> {
+                editor = PromptEditor(host, model, "prompt_${kind.name.lowercase()}")
+                b.body.addView(editor!!.view)
             }
             tab == AppTab.FAVORITES -> {
                 val favorites = model.snapshot.value!!.favorites
                 renderedFavorites = favorites
                 val effects = model.catalog.effects(kind).filter { it.id in favorites }
-                if (effects.isEmpty()) addEmpty(R.drawable.ic_heart_outline, R.string.empty_favorites_title, R.string.empty_favorites_body, R.string.explore_effects) {
+                if (effects.isEmpty()) addEmpty(R.drawable.demo_empty_favorites, R.string.empty_favorites_title, R.string.empty_favorites_body, R.string.explore_effects) {
                     host.selectTab(if (kind == MediaKind.VIDEO) AppTab.VIDEO else AppTab.PHOTO)
                 } else addGrid(effects)
             }
-            tab == AppTab.LIBRARY -> addEmpty(R.drawable.ic_clock, R.string.empty_library_title, R.string.empty_library_body, R.string.explore_effects) {
-                host.selectTab(if (kind == MediaKind.VIDEO) AppTab.VIDEO else AppTab.PHOTO)
+            tab == AppTab.LIBRARY -> {
+                renderedJobs = model.snapshot.value!!.jobs
+                val jobs = renderedJobs!!.filter { it.draft.kind == kind }.reversed()
+                if (jobs.isEmpty()) addEmpty(R.drawable.demo_empty_library, R.string.empty_library_title, R.string.empty_library_body, R.string.start_creating) {
+                    host.selectTab(if (kind == MediaKind.VIDEO) AppTab.VIDEO else AppTab.PHOTO)
+                    (host.supportFragmentManager.findFragmentByTag("root_${if (kind == MediaKind.VIDEO) AppTab.VIDEO.name else AppTab.PHOTO.name}") as? BrowserFragment)?.showPrompt()
+                } else addJobGrid(jobs)
             }
             tab == AppTab.SETTINGS -> addSettings()
         }
         cards.forEach { it.bindFavorite(it.effect.id in model.snapshot.value!!.favorites) }
         if (keepScroll) b.scroll.post { binding?.scroll?.scrollTo(0, position) }
+    }
+    private fun addJobGrid(jobs: List<GenerationJob>) {
+        val ctx = requireContext()
+        jobs.chunked(2).forEach { pair ->
+            val row = LinearLayout(ctx).apply { orientation = LinearLayout.HORIZONTAL; setPadding(ctx.dp(16),0,ctx.dp(16),ctx.dp(8)) }
+            pair.forEachIndexed { index, job ->
+                val name = job.draft.effectId?.let { model.catalog.effect(it)?.title }?.let(::getString)
+                    ?: job.draft.prompt.ifBlank { getString(if (job.draft.kind == MediaKind.VIDEO) R.string.demo_video_title else R.string.demo_photo_title) }
+                row.addView(GenerationCard(ctx,job,name,
+                    { if (job.status == JobStatus.FAILED) host.showFailedActions(job.id) else host.openJob(job.id) },
+                    { if (job.status == JobStatus.FAILED) host.showFailedActions(job.id) else host.confirmDelete(job.id) }),
+                    LinearLayout.LayoutParams(0,-2,1f).apply { if (index > 0) marginStart = ctx.dp(8) })
+            }
+            if (pair.size == 1) row.addView(Space(ctx),LinearLayout.LayoutParams(0,1,1f).apply { marginStart = ctx.dp(8) })
+            binding!!.body.addView(row)
+        }
     }
     private fun card(effect: Effect): EffectCard = EffectCard(requireContext(), effect,
         { host.openEffect(effect.id) }, { model.toggleFavorite(effect.id) }).also { cards.add(it) }
@@ -187,9 +217,9 @@ class BrowserFragment : Fragment() {
         val ctx = requireContext()
         val panel = LinearLayout(ctx).apply { orientation = LinearLayout.VERTICAL; gravity = Gravity.CENTER; setPadding(ctx.dp(32), ctx.dp(72), ctx.dp(32), ctx.dp(32)) }
         panel.addView(ImageView(ctx).apply {
-            setImageResource(icon); imageTintList = android.content.res.ColorStateList.valueOf(ctx.color(R.color.ds_label_quaternary))
+            setImageResource(icon); scaleType = ImageView.ScaleType.FIT_CENTER
             importantForAccessibility = View.IMPORTANT_FOR_ACCESSIBILITY_NO
-        }, LinearLayout.LayoutParams(ctx.dp(96), ctx.dp(96)).apply { bottomMargin = ctx.dp(24) })
+        }, LinearLayout.LayoutParams(ctx.dp(220), ctx.dp(240)).apply { bottomMargin = ctx.dp(24) })
         panel.addView(ctx.text(getString(title), R.style.TextAppearance_AiVideoTest_Title2_Emphasized).apply { gravity = Gravity.CENTER }, LinearLayout.LayoutParams(-1, -2))
         panel.addView(ctx.text(getString(message)).apply { gravity = Gravity.CENTER; setTextColor(ctx.color(R.color.ds_label_tertiary)) }, LinearLayout.LayoutParams(-1, -2).apply { topMargin = ctx.dp(12); bottomMargin = ctx.dp(24) })
         panel.addView(ctx.button(getString(action), true).apply { setOnClickListener { click() } }, LinearLayout.LayoutParams(-1, ctx.dp(48)))
@@ -207,6 +237,8 @@ class BrowserFragment : Fragment() {
         binding!!.body.addView(ctx.text(getString(R.string.demo_account), R.style.TextAppearance_AiVideoTest_Headline_Emphasized).apply { setPadding(ctx.dp(16), 0, ctx.dp(16), 0) })
         binding!!.body.addView(ctx.text(getString(R.string.settings_preview)).apply { setPadding(ctx.dp(16), ctx.dp(12), ctx.dp(16), 0); setTextColor(ctx.color(R.color.ds_label_tertiary)) })
     }
+    fun showMediaKind(value: MediaKind) { if (kind != value) { kind = value; scrollY = 0; if (binding != null) { renderControls(); renderBody() } } }
+    fun showPrompt() { mode = 1; scrollY = 0; if (binding != null) { renderControls(); renderBody() } }
     companion object {
         fun root(tab: AppTab) = BrowserFragment().apply { arguments = Bundle().apply { putString("tab", tab.name) } }
         fun category(kind: MediaKind, category: Category) = BrowserFragment().apply {

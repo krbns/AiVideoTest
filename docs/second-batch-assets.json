@@ -1,0 +1,164 @@
+[
+  {
+    "resource": "demo_good_1",
+    "page": 119,
+    "image_object_index": 5,
+    "sha256": "a25a8037a20b018900884314e725c61b2007ab70de4fec3e72c297369d17487e"
+  },
+  {
+    "resource": "demo_good_2",
+    "page": 119,
+    "image_object_index": 6,
+    "sha256": "72509fe6e545227eb1f6a28a8bda712a3236da5efe88bf48c34d769d6174e243"
+  },
+  {
+    "resource": "demo_bad_1",
+    "page": 119,
+    "image_object_index": 7,
+    "sha256": "d41e89b14667ac30989d1a17b3d4d9cdc8e5c5325187f1f6343f3259437cef41"
+  },
+  {
+    "resource": "demo_bad_2",
+    "page": 119,
+    "image_object_index": 8,
+    "sha256": "3e4b02222626e3e3361398e5065e9c50a6705b1828b0f7f294c71a255d344409"
+  },
+  {
+    "resource": "demo_style_ghibli",
+    "page": 157,
+    "image_object_index": 0,
+    "sha256": "862d5dd3f15a2df0c8817cce0275a328324e57e326f8e42dfa936452ef8d57ba"
+  },
+  {
+    "resource": "demo_style_3d",
+    "page": 157,
+    "image_object_index": 1,
+    "sha256": "a5e1db1677264fabe345ec54d2d23ade9ba78b1597e9401812a598db84763c04"
+  },
+  {
+    "resource": "demo_style_simpsons",
+    "page": 157,
+    "image_object_index": 2,
+    "sha256": "794c6a441ea75630c7e979f01b7668fb9504eb6a4a350f0eaa0c80a87eec11b5"
+  },
+  {
+    "resource": "demo_style_fantasy",
+    "page": 157,
+    "image_object_index": 3,
+    "sha256": "2f21471d367efaf810dff6541d4d790d65afc5f036a625af056f1c2f92a053e3"
+  },
+  {
+    "resource": "demo_creating",
+    "page": 97,
+    "source": "Creating illustration crop (vector artwork)",
+    "sha256": "4c82b3fce3d3327aa514cc0cefa3f3f47df01d814563b0c9427cb06d1efe7ad2"
+  },
+  {
+    "resource": "demo_video",
+    "source": "demo_beach.webp",
+    "type": "Local synthetic zoom clip from PDF still; not original effect animation",
+    "dimensions": [
+      480,
+      640
+    ],
+    "duration_seconds": 3,
+    "fps": 24,
+    "sha256": "f8b63c2d75564e5f9a29f175c27aae0457a633417d428436c9a22dfb653e2058"
+  },
+  {
+    "resource": "demo_video_anime_1",
+    "source": "demo_anime_1.webp",
+    "type": "Local synthetic zoom clip from PDF still; not original effect animation",
+    "dimensions": [
+      480,
+      640
+    ],
+    "duration_seconds": 3,
+    "fps": 24,
+    "sha256": "76438a0f2a87493d7ac4edc292dec2426164f0d418f2165a64a6a09326c90ba0"
+  },
+  {
+    "resource": "demo_video_anime_portrait",
+    "source": "demo_anime_portrait.webp",
+    "type": "Local synthetic zoom clip from PDF still; not original effect animation",
+    "dimensions": [
+      480,
+      640
+    ],
+    "duration_seconds": 3,
+    "fps": 24,
+    "sha256": "16b422d75e6c9a96f13a09d4d070dc2dc56b7121cf99721bffb376c10013a520"
+  },
+  {
+    "resource": "demo_video_fashion",
+    "source": "demo_fashion.webp",
+    "type": "Local synthetic zoom clip from PDF still; not original effect animation",
+    "dimensions": [
+      480,
+      640
+    ],
+    "duration_seconds": 3,
+    "fps": 24,
+    "sha256": "df064f69489055670bbc8f94fde4f8b50280818335f980b61760a7f4d89ce701"
+  },
+  {
+    "resource": "demo_video_gold",
+    "source": "demo_gold.webp",
+    "type": "Local synthetic zoom clip from PDF still; not original effect animation",
+    "dimensions": [
+      480,
+      640
+    ],
+    "duration_seconds": 3,
+    "fps": 24,
+    "sha256": "cb6f80c1ba7c7ae6cdf753db19f0105ad0019251fbb73c05a94c5438ff08c2fd"
+  },
+  {
+    "resource": "demo_video_japan",
+    "source": "demo_japan.webp",
+    "type": "Local synthetic zoom clip from PDF still; not original effect animation",
+    "dimensions": [
+      480,
+      640
+    ],
+    "duration_seconds": 3,
+    "fps": 24,
+    "sha256": "68d655ebecc3217a526515458033ceb234c7b6685fcc8509314346e9282edd99"
+  },
+  {
+    "resource": "demo_video_penguin",
+    "source": "demo_penguin.webp",
+    "type": "Local synthetic zoom clip from PDF still; not original effect animation",
+    "dimensions": [
+      480,
+      640
+    ],
+    "duration_seconds": 3,
+    "fps": 24,
+    "sha256": "1d241cf3ec10b45b53be4adddc0db4100c48fcf1403247f621074a170c78bd4c"
+  },
+  {
+    "resource": "demo_video_portrait",
+    "source": "demo_portrait.webp",
+    "type": "Local synthetic zoom clip from PDF still; not original effect animation",
+    "dimensions": [
+      480,
+      640
+    ],
+    "duration_seconds": 3,
+    "fps": 24,
+    "sha256": "dd7563b539f591d60fc8bc1115b5fd18f8b2241862ef87f4629db2f466b3b4dd"
+  },
+  {
+    "resource": "demo_video_underwater",
+    "source": "demo_underwater.webp",
+    "type": "Local synthetic zoom clip from PDF still; not original effect animation",
+    "dimensions": [
+      480,
+      640
+    ],
+    "duration_seconds": 3,
+    "fps": 24,
+    "sha256": "a8133e691eae7c63687fd578d312995ec441558ae7c79adabdcc41c74bc03d90"
+  }
+]

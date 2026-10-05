@@ -8,6 +8,7 @@ appcompat = "1.6.1"
 material = "1.10.0"
 fragment = "1.6.2"
 lifecycle = "2.6.2"
+exif = "1.4.2"
 
 [libraries]
 androidx-core-ktx = { group = "androidx.core", name = "core-ktx", version.ref = "coreKtx" }
@@ -19,6 +20,8 @@ material = { group = "com.google.android.material", name = "material", version.r
 androidx-fragment = { group = "androidx.fragment", name = "fragment", version.ref = "fragment" }
 androidx-lifecycle-viewmodel = { group = "androidx.lifecycle", name = "lifecycle-viewmodel", version.ref = "lifecycle" }
 androidx-lifecycle-livedata = { group = "androidx.lifecycle", name = "lifecycle-livedata", version.ref = "lifecycle" }
+
+androidx-exifinterface = { group = "androidx.exifinterface", name = "exifinterface", version.ref = "exif" }
 
 [plugins]
 android-application = { id = "com.android.application", version.ref = "agp" }

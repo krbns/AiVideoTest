@@ -23,7 +23,7 @@ fun MaterialButton.bindBalance(model: AppViewModel) {
 }
 private fun showDemoControls(view: View, model: AppViewModel) {
     val context = view.context
-    val options = intArrayOf(R.string.debug_free, R.string.debug_pro, R.string.debug_zero, R.string.debug_reset).map(context::getString).toTypedArray()
+    val options = intArrayOf(R.string.debug_free, R.string.debug_pro, R.string.debug_zero, R.string.debug_reset, R.string.debug_photo_error, R.string.debug_generation_error, R.string.debug_export_error).map(context::getString).toTypedArray()
     MaterialAlertDialogBuilder(context).setTitle(R.string.debug_title).setItems(options) { _, index ->
         when (index) {
             0 -> model.setAccount(DemoAccount())
@@ -31,6 +31,9 @@ private fun showDemoControls(view: View, model: AppViewModel) {
             2 -> model.setAccount(DemoAccount(0))
             3 -> MaterialAlertDialogBuilder(context).setTitle(R.string.debug_reset_title).setMessage(R.string.debug_reset_body)
                 .setNegativeButton(R.string.cancel, null).setPositiveButton(R.string.reset) { _, _ -> model.reset() }.show()
+            4 -> { model.failNextPhoto = true; android.widget.Toast.makeText(context, R.string.debug_error_ready, android.widget.Toast.LENGTH_SHORT).show() }
+            5 -> { model.failNextGeneration = true; android.widget.Toast.makeText(context, R.string.debug_error_ready, android.widget.Toast.LENGTH_SHORT).show() }
+            6 -> { model.exports.failNext = true; android.widget.Toast.makeText(context, R.string.debug_error_ready, android.widget.Toast.LENGTH_SHORT).show() }
         }
     }.setNegativeButton(R.string.close, null).show()
 }
