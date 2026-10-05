@@ -9,11 +9,11 @@ enum class Category(@param:StringRes val title: Int) {
     POPULAR(R.string.popular), ANIME(R.string.anime), FASHION(R.string.fashion),
     NEW(R.string.new_effects), RETRO(R.string.retro)
 }
-enum class AppTab(val menuId: Int, @param:StringRes val title: Int, val kind: MediaKind? = null) {
-    VIDEO(R.id.tab_video, R.string.ai_video, MediaKind.VIDEO),
-    PHOTO(R.id.tab_photo, R.string.ai_photo, MediaKind.PHOTO),
-    FAVORITES(R.id.tab_favorites, R.string.favorites),
-    LIBRARY(R.id.tab_library, R.string.library), SETTINGS(R.id.tab_settings, R.string.settings)
+enum class AppTab( @param:StringRes val title: Int, val kind: MediaKind? = null) {
+    VIDEO(R.string.ai_video, MediaKind.VIDEO),
+    PHOTO(R.string.ai_photo, MediaKind.PHOTO),
+    FAVORITES(R.string.favorites),
+    LIBRARY(R.string.library), SETTINGS(R.string.settings)
 }
 data class Effect(
     val id: String, val kind: MediaKind, @param:StringRes val title: Int,

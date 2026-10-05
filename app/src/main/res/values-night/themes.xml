@@ -1,6 +1,0 @@
-<?xml version="1.0" encoding="utf-8"?>
-<resources>
-    <!-- Reuse the same exported dark palette instead of the starter night overrides. -->
-    <style name="Theme.AiVideoTest" parent="Base.Theme.AiVideoTest">
-    </style>
-</resources>

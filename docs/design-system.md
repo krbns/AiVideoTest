@@ -4,7 +4,7 @@
 
 Источник истины: прикреплённый PDF `(2)` (20 страниц), страница 19 — типографика, страница 20 — палитра; PDF `(1)` (49 страниц) — компоненты и состояния. Первые 18 страниц PDF `(2)` — отдельные изображения/иконки, не дополнительные токены.
 
-Проект до интеграции: Android Views, AppCompat 1.6.1 / Material Components 1.10.0, minSdk 24; production-классов, Activity и экранов нет. Сохранены зависимости, Gradle, manifest, имя Theme.AiVideoTest и родитель DayNight.DarkActionBar. Добавлены XML-ресурсы для существующего UI-стека. Демонстрационный layout находится только в src/debug: открыть design_system_preview.xml в Layout Editor. Запускаемого экрана в исходном проекте нет.
+Текущий UI: Jetpack Compose / Material 3, ComponentActivity и Navigation Compose. XML-экраны, Fragment и ViewBinding удалены. `ui/theme/AiVideoTheme.kt` читает 28 цветов из `design_colors.xml` и 34 типографические роли из `typography_dimens.xml`, без дублирования численных значений. Экраны используют `Ds.colors` и `Ds.type`. XML-тема оформляет только системное окно. Подробности миграции — в `compose-migration-report.md`.
 
 ## Цвета
 
@@ -45,9 +45,9 @@
 
 SF Pro — семейство в исходнике. Файлов шрифта, пригодных для Android, не приложено. SF Pro не встроен и не извлечён из PDF. Сейчас используется системный sans-serif (обычно Roboto); метрики и числовые веса исходника сохранены как токены, но форма глифов будет отличаться. Ограничения лицензии Apple: https://developer.apple.com/fonts/ (раздел License Agreement, 2A–2B). Для точного семейства необходим шрифт с правом встраивания в Android или утверждённая замена.
 
-font_families.xml централизует fallback. API 28+ использует android:textFontWeight 400/500/600/700; API 24–27: Regular → sans-serif, Medium/Semibold → sans-serif-medium, Bold → sans-serif + bold. Поэтому Semibold на API 24–27 приближён к 500. Italic задаётся отдельно. При подключении лицензированного семейства заменить ссылки fontFamily/android:fontFamily в четырёх весовых базах, сохранив роли.
+В Compose fallback централизован в AiVideoTheme: FontFamily.SansSerif, числовые веса 400/500/600/700 и FontStyle.Italic. Отрисовка веса зависит от системного шрифта устройства. При подключении лицензированного семейства заменить FontFamily в этом месте, сохранив роли.
 
-Размеры px из дизайн-макета перенесены численно в sp, высота строки тоже в sp; геометрия компонентов — в dp. Это адаптация единиц для плотности экрана и пользовательского масштаба текста. MaterialTextView читает lineHeight из textAppearance начиная с minSdk; у обычного TextView/AppCompatTextView до API 28 нужно задавать высоту строки отдельно. Используйте MaterialTextView и android:textAppearance. Padding шрифта отключён, letterSpacing = 0: отдельного tracking в PDF нет.
+Размеры px из дизайн-макета перенесены численно в sp, высота строки тоже в sp; геометрия компонентов — в dp. Compose использует TextStyle с includeFontPadding=false и letterSpacing=0. Исходные sp считываются без предварительного масштабирования, поэтому пользовательский размер шрифта применяется один раз.
 
 | Стиль | Вариант | Размер/строка (sp) | Вес |
 | --- | --- | --- | --- |
@@ -86,39 +86,27 @@ font_families.xml централизует fallback. API 28+ используе�
 | Caption2 | Italic | 11/13 | 400 |
 | Caption2 | EmphasizedItalic | 11/13 | 600 |
 
-Имена стилей: `TextAppearance.AiVideoTest.<Стиль>.<Вариант>`, например `TextAppearance.AiVideoTest.Body.EmphasizedItalic`. Стандартные роли Material сопоставлены этим стилям в теме; это интеграционные алиасы, а не новые значения из PDF.
+Имена стилей в Compose: `Ds.type.largeTitleRegular`, `Ds.type.title1Emphasized`, `Ds.type.bodyEmphasizedItalic` и т. д. Стандартные роли Material 3 сопоставлены этим стилям в теме; это интеграционные алиасы, а не новые значения из PDF.
 
-## Компоненты
+## Компоненты Compose
 
-- Primary button: accent/primary, текст label/primaryInverted; disabled — primaryAlpha и primaryInvertedInvariably. Large/Medium/Small/Compact: минимальные высоты 56/44/40/32dp, pill-форма. Эти размеры измерены в PDF `(1)`, стр. 21. Высота не фиксируется, чтобы текст мог увеличиваться. Loading-поведение не задано PDF как логика и не добавлено.
-- Secondary/Text buttons: accent/grey / прозрачный стандартный TextButton, label/primary; disabled — primaryInvariably. Это сопоставление токенов, поскольку экспорт не содержит имён вариантов.
-- Card и Card.Selectable: secondary background; checked/selected — primaryAlpha и accent/primary border, на основе карточек подписки стр. 27/32. Радиус 16dp измерен по контуру стр. 32. Checked-состояние выставляется через MaterialCardView.setChecked; selected — через View.setSelected. Обычная карточка не кликабельна по умолчанию.
-- TextInputLayout / TextInputEditText: контур separator, фокус separator/primary, ошибка accent/red; радиус prompt 20dp измерен на стр. 26. SearchInput: background/tertiary, радиус 22dp со стр. 36. Используется обычный TextInputEditText; search icon и бизнес-логика добавляются экраном. Если нужна точная высота строки ввода, задавать её EditText отдельно: MaterialTextView и EditText используют разные пути применения lineHeight.
-- BottomNavigation / TabLayout: выбранный пункт accent/primary, остальные label/primary, неактивный disabled — quintuple. Caption1 для нижней навигации; Subheadline для табов — выбор Android-интеграции. Точная связь подписей с типографическими ролями в PDF не названа.
-- MenuText: Subheadline; меню, paywall и карточки могут собираться из этих стилей. Экспорт показывает визуальные состояния, но не определяет действия, переходы, цены или подписочную логику.
+`DsButton`, `RoundAction`, `ScreenHeader`, `Segmented`, `InfoDialog`, `BalanceButton`, `EffectCard`, `GenerationCard`, `PromptEditor` и Compose ModalBottomSheet используют семантическую палитру. Высоты кнопок 56/44dp и радиус поля запроса читаются из component_dimens.xml. Disabled Generate сохраняет background/secondary и label/quaternary из второй порции. Динамическая палитра отключена, чтобы сохранить цвета PDF. DsCardSurface и DsSearchField заменяют соответствующие базовые XML-стили; примеры доступны в DesignSystemPreview.
 
-Основные компоненты подключены к теме через materialButtonStyle, materialCardViewStyle, textInputStyle, bottomNavigationStyle, tabStyle. Для вариантов указывать style явно. Старые purple/teal/black/white оставлены как алиасы, чтобы существующие ссылки ресурсов продолжали собираться.
-
-```xml
-<com.google.android.material.textview.MaterialTextView
-    android:layout_width="wrap_content"
-    android:layout_height="wrap_content"
-    android:textAppearance="@style/TextAppearance.AiVideoTest.Title1.Emphasized" />
-
-<com.google.android.material.button.MaterialButton
-    style="@style/Widget.AiVideoTest.Button.Primary"
-    android:layout_width="match_parent"
-    android:layout_height="wrap_content" />
+```kotlin
+AiVideoTheme {
+    Text("Title", style = Ds.type.title1Emphasized, color = Ds.colors.labelPrimary)
+    DsButton("Continue", primary = true, onClick = {})
+}
 ```
 
 ## Неоднозначности и ограничения
 
-1. В PDF есть только dark-палитра. Она применяется при обоих режимах системы; light-цвета не выдуманы. Родитель темы сохранён, отдельного механизма DayNight не добавлено.
+1. В PDF есть только dark-палитра. Она применяется при обоих режимах системы; light-цвета не выдуманы. Compose использует фиксированную палитру из PDF.
 2. LargeTitle Emphasized — 32/34 (Regular 34/41); Body Regular — 12/16, Emphasized — 15/18 Medium, italic-варианты — 17/22; Callout Emphasized — 18/22 (остальные 16/21); Footnote Regular — 10/12 (остальные 13/18). Они выглядят необычно, но перенесены дословно, без замены стандартными iOS-метриками.
 3. Второй вариант Headline подписан «Headline», а не «Emphasized». В коде он Emphasized, потому что PDF указывает Semibold 16/20.
 4. label/tertiary и label/tertiary 2 совпадают (#faf5ff99), system/neutral и system/white совпадают. Оба имени сохранены отдельно. system/black = #000111, не чистый #000000.
 5. background/dim = #faf5ff66 — светлый прозрачный токен, не чёрная затемняющая маска. Сохранён буквально.
-6. SF Pro отличается от фактического Android fallback; API 24–27 не даёт точного веса 600. При замене шрифта нужна проверка кириллицы, переносов и увеличенного текста.
+6. SF Pro отличается от фактического Android fallback. Числовой вес 600 сохраняется в TextStyle, но его отрисовка зависит от системного шрифта. При замене шрифта нужна проверка кириллицы, переносов и увеличенного текста.
 7. PDF компонентов не экспортирует все имена, размеры, отступы и переходы состояний. Использованы измеренные контуры там, где это возможно; Android padding 16dp, stroke 1/2dp, ripple, disabled и связь компонентов с ролями — явно выбранные адаптации, не токены PDF. Серая заливка кнопок в PDF выглядит как отдельный #4d4d4d, которого нет в таблице; используется опубликованный accent/grey, различие требует уточнения дизайна.
 8. SF Symbols из PDF не перенесены как текстовые private-use символы: без соответствующего шрифта на Android они дадут пустые квадраты. Векторные иконки и полноэкранные композиции нужно согласовать при добавлении экранов.
-9. 32–44dp варианты кнопок воспроизводят визуальные размеры PDF; экранам следует обеспечить Android touch target отдельно. UI на устройстве пока не проверен: исходный проект не содержит запускаемой Activity.
+9. 32–44dp варианты кнопок воспроизводят визуальные размеры PDF; экранам следует обеспечить Android touch target отдельно. Результаты проверки Compose-экранов на эмуляторе — в отчёте миграции.

@@ -8,10 +8,7 @@ import android.provider.MediaStore
 import androidx.lifecycle.ViewModelProvider
 import androidx.test.core.app.ActivityScenario
 import androidx.test.core.app.ApplicationProvider
-import androidx.test.espresso.Espresso.*
-import androidx.test.espresso.action.ViewActions.click
-import androidx.test.espresso.assertion.ViewAssertions.matches
-import androidx.test.espresso.matcher.ViewMatchers.*
+import androidx.compose.ui.test.*
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import com.rslnabk.aivideotest.data.demo.*
 import com.rslnabk.aivideotest.data.media.*
@@ -26,8 +23,7 @@ import org.json.JSONObject
 import androidx.test.platform.app.InstrumentationRegistry
 
 @RunWith(AndroidJUnit4::class)
-class ResultExportTest {
-    private val context get() = ApplicationProvider.getApplicationContext<Context>()
+class ResultExportTest : ComposeFlowTest() {
     private fun job(kind: MediaKind): GenerationJob {
         val draft = GenerationDraft("prompt_${kind.name.lowercase()}",kind,prompt = "Demo")
         return GenerationJob(UUID.randomUUID().toString(),draft,10,DemoResultFixtures.image(draft,DemoCatalogRepository()),0,0,status = JobStatus.SUCCEEDED)
@@ -81,15 +77,15 @@ class ResultExportTest {
         var exported:Uri?=null
         ActivityScenario.launch(MainActivity::class.java).use { scenario ->
             scenario.onActivity { it.openJob(job.id);ViewModelProvider(it)[AppViewModel::class.java].exports.failNext=true }
-            onView(withId(R.id.options)).perform(click());onView(withText(R.string.save_gallery)).perform(click())
+            tag("options").performClick();text(R.string.save_gallery).performClick()
             await(scenario) { it.exports.state.value?.phase==ExportPhase.FAILED }
-            onView(withText(R.string.gallery_error)).check(matches(isDisplayed()))
+            text(R.string.gallery_error).assertIsDisplayed()
             scenario.recreate()
-            onView(withText(R.string.refresh)).perform(click())
+            text(R.string.refresh).performClick()
             await(scenario) { it.exports.state.value?.phase==ExportPhase.SUCCEEDED }
             scenario.onActivity { exported=ViewModelProvider(it)[AppViewModel::class.java].exports.state.value?.uri }
-            onView(withText(R.string.saved_gallery)).check(matches(isDisplayed()))
-            onView(withText(R.string.okay)).perform(click())
+            text(R.string.saved_gallery).assertIsDisplayed()
+            text(R.string.okay).performClick()
             scenario.onActivity { assertTrue(ViewModelProvider(it)[AppViewModel::class.java].exports.begin(job,ExportDestination.FILES)) }
             scenario.recreate()
             scenario.onActivity {
@@ -98,7 +94,7 @@ class ResultExportTest {
                 assertFalse(exports.begin(job,ExportDestination.GALLERY))
                 exports.documentChosen(job,null)
             }
-            onView(withId(R.id.share)).check(matches(isEnabled()))
+            tag("share").assertIsEnabled()
             scenario.onActivity { assertEquals(1,ViewModelProvider(it)[AppViewModel::class.java].snapshot.value!!.jobs.size) }
         }
         exported?.let { context.contentResolver.delete(it,null,null) }
@@ -124,15 +120,7 @@ class ResultExportTest {
                 assertNull(ViewModelProvider(it)[AppViewModel::class.java].exports.state.value)
                 it.openJob(job.id)
             }
-            onView(withId(R.id.share)).check(matches(isEnabled()))
+            tag("share").assertIsEnabled()
         }
-    }
-    private fun await(scenario:ActivityScenario<MainActivity>,check:(AppViewModel)->Boolean) {
-        val deadline=System.currentTimeMillis()+10000
-        while (System.currentTimeMillis()<deadline) {
-            var ready=false;scenario.onActivity { ready=check(ViewModelProvider(it)[AppViewModel::class.java]) }
-            if (ready) { onIdle();return };Thread.sleep(100)
-        }
-        fail("Export did not settle")
     }
 }
