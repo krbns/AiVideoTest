@@ -28,10 +28,11 @@ class AppViewModel(application: Application) : AndroidViewModel(application) {
     @Volatile private var disposed = false
     var failNextPhoto = false
     var failNextGeneration = false
+    var nextPurchaseOutcome = DemoPurchaseOutcome.SUCCESS
     private val tick = object : Runnable {
         override fun run() {
             session.reconcile(System.currentTimeMillis()); publish()
-            if (session.snapshot.jobs.any { it.status == JobStatus.RUNNING }) handler.postDelayed(this, 250)
+            if (session.snapshot.jobs.any { it.status == JobStatus.RUNNING } || session.snapshot.commerce.operation?.phase == PurchasePhase.LOADING) handler.postDelayed(this, 250)
         }
     }
     init {
@@ -43,10 +44,10 @@ class AppViewModel(application: Application) : AndroidViewModel(application) {
     private fun publish() { if (mutableSnapshot.value != session.snapshot) mutableSnapshot.value = session.snapshot }
     fun toggleFavorite(id: String) { session.toggleFavorite(id); publish() }
     fun setAccount(account: DemoAccount) { session.setAccount(account); publish() }
-    fun addDemoCredits() { setAccount(session.snapshot.account.copy(tokens = session.snapshot.account.tokens + 100)) }
     fun reset() {
         photoOperations.keys.toList().forEach { photoOperations[it] = photoOperations.getValue(it) + 1 }
         handler.removeCallbacks(tick); failNextPhoto = false; failNextGeneration = false
+        nextPurchaseOutcome = DemoPurchaseOutcome.SUCCESS
         session.reset(); publish()
         exports.reset()
     }
@@ -101,6 +102,26 @@ class AppViewModel(application: Application) : AndroidViewModel(application) {
     fun deleteJob(id: String): Boolean {
         if (exports.state.value?.let { it.jobId == id && it.busy } == true) return false
         val removed = session.deleteJob(id); publish(); return removed
+    }
+    fun purchase(product: DemoProduct, continuation: CreationIntent? = null) = beginPurchase(product, continuation, PurchaseAction.BUY)
+    fun restorePurchases(continuation: CreationIntent? = null) = beginPurchase(null, continuation, PurchaseAction.RESTORE)
+    private fun beginPurchase(product: DemoProduct?, continuation: CreationIntent?, action: PurchaseAction): Boolean {
+        val accepted = session.beginPurchase(UUID.randomUUID().toString(), product, System.currentTimeMillis(), nextPurchaseOutcome, continuation, action)
+        if (accepted) { nextPurchaseOutcome = DemoPurchaseOutcome.SUCCESS; schedulePurchase() }
+        return accepted
+    }
+    private fun schedulePurchase() { publish(); handler.removeCallbacks(tick); handler.post(tick) }
+    fun cancelPurchase(id: String) { if (session.cancelPurchase(id)) publish() }
+    fun acknowledgePurchase(id: String) { if (session.acknowledgePurchase(id)) publish() }
+    fun retryPurchase(id: String) {
+        if (session.retryPurchase(id, UUID.randomUUID().toString(), System.currentTimeMillis(), nextPurchaseOutcome)) {
+            nextPurchaseOutcome = DemoPurchaseOutcome.SUCCESS; schedulePurchase()
+        }
+    }
+    fun resumePurchase(id: String): SubmitResult? {
+        val result = session.resumePurchase(id, UUID.randomUUID().toString(), System.currentTimeMillis(), failNextGeneration)
+        if (result is SubmitResult.Accepted) { failNextGeneration = false; schedulePurchase() } else publish()
+        return result
     }
     override fun onCleared() { disposed = true; exports.close(); handler.removeCallbacksAndMessages(null); worker.shutdownNow(); super.onCleared() }
 }

@@ -12,7 +12,7 @@ class DemoSession(private val store: DemoStore, private val catalog: CatalogRepo
         if (catalog.effect(id) == null) return
         update(snapshot.copy(favorites = if (id in snapshot.favorites) snapshot.favorites - id else snapshot.favorites + id))
     }
-    fun setAccount(account: DemoAccount) = update(snapshot.copy(account = account.copy(tokens = account.tokens.coerceAtLeast(0))))
+    fun setAccount(account: DemoAccount) = update(snapshot.copy(account = account.copy(tokens = account.tokens.coerceAtLeast(0), plan = if (account.isPro) account.plan else null)))
     fun reset() = update(DemoSnapshot())
     fun draft(key: String): GenerationDraft = snapshot.drafts[key] ?: catalog.effect(key)?.let {
         GenerationDraft(key, it.kind, effectId = it.id)
@@ -22,7 +22,8 @@ class DemoSession(private val store: DemoStore, private val catalog: CatalogRepo
     fun markInstructionSeen() = update(snapshot.copy(instructionSeen = true))
     fun cost(draft: GenerationDraft): Int = draft.effectId?.let { catalog.effect(it)?.tokenCost }
         ?: if (draft.kind == MediaKind.VIDEO && draft.resolution == 1080) 30 else 10
-    fun submit(key: String, id: String, now: Long, fail: Boolean = false): SubmitResult {
+    fun submit(key: String, id: String, now: Long, fail: Boolean = false): SubmitResult = submit(key, id, now, fail, snapshot.commerce)
+    private fun submit(key: String, id: String, now: Long, fail: Boolean, commerce: DemoCommerce): SubmitResult {
         val draft = draft(key)
         snapshot.jobs.find { it.id == draft.activeJobId && it.status == JobStatus.RUNNING }?.let {
             return SubmitResult.Accepted(it.id)
@@ -33,7 +34,7 @@ class DemoSession(private val store: DemoStore, private val catalog: CatalogRepo
         val image = DemoResultFixtures.image(draft, catalog)
         val job = GenerationJob(id, draft, required, image, now, now + 4000, fail)
         update(snapshot.copy(account = snapshot.account.copy(tokens = snapshot.account.tokens - required),
-            drafts = snapshot.drafts + (key to draft.copy(activeJobId = id)), jobs = snapshot.jobs + job))
+            drafts = snapshot.drafts + (key to draft.copy(activeJobId = id)), jobs = snapshot.jobs + job, commerce = commerce))
         return SubmitResult.Accepted(id)
     }
     /** Settles persisted jobs by deadline, independently of the current screen. Failure refunds once. */
@@ -47,16 +48,18 @@ class DemoSession(private val store: DemoStore, private val catalog: CatalogRepo
         }
         if (jobs != snapshot.jobs) update(snapshot.copy(jobs = jobs,
             account = snapshot.account.copy(tokens = snapshot.account.tokens + refund)))
+        settlePurchase(now)
     }
     /** Retry the immutable failed request in its existing history slot. Edited input stays untouched. */
-    fun retryJob(id: String, now: Long, fail: Boolean = false): SubmitResult {
+    fun retryJob(id: String, now: Long, fail: Boolean = false): SubmitResult = retryJob(id, now, fail, snapshot.commerce)
+    private fun retryJob(id: String, now: Long, fail: Boolean, commerce: DemoCommerce): SubmitResult {
         val job = snapshot.jobs.find { it.id == id } ?: return SubmitResult.InvalidDraft
         if (job.status == JobStatus.RUNNING) return SubmitResult.Accepted(id)
         if (job.status != JobStatus.FAILED || !job.draft.isValid) return SubmitResult.InvalidDraft
         if (snapshot.account.tokens < job.tokenCost) return SubmitResult.InsufficientBalance(job.tokenCost)
         update(snapshot.copy(account = snapshot.account.copy(tokens = snapshot.account.tokens - job.tokenCost),
             jobs = snapshot.jobs.map { if (it.id == id) it.copy(status = JobStatus.RUNNING,
-                readyAt = now + 4000, willFail = fail) else it }))
+                readyAt = now + 4000, willFail = fail) else it }, commerce = commerce))
         return SubmitResult.Accepted(id)
     }
     /** Active jobs finish normally. Removing settled history never changes tokens or favorites. */
@@ -68,6 +71,67 @@ class DemoSession(private val store: DemoStore, private val catalog: CatalogRepo
                 if (draft.activeJobId == id) draft.copy(activeJobId = null) else draft
             }))
         return true
+    }
+    fun beginPurchase(id: String, product: DemoProduct?, now: Long, outcome: DemoPurchaseOutcome,
+        continuation: CreationIntent? = null, action: PurchaseAction = PurchaseAction.BUY): Boolean {
+        if (snapshot.commerce.operation != null || (action == PurchaseAction.BUY && product == null)) return false
+        update(snapshot.copy(commerce = snapshot.commerce.copy(operation = DemoPurchase(id, action, product, now + 1500, outcome, continuation = continuation))))
+        return true
+    }
+    fun cancelPurchase(id: String): Boolean {
+        val op = snapshot.commerce.operation ?: return false
+        if (op.id != id || op.phase != PurchasePhase.LOADING) return false
+        update(snapshot.copy(commerce = snapshot.commerce.copy(operation = op.copy(phase = PurchasePhase.CANCELLED))))
+        return true
+    }
+    fun acknowledgePurchase(id: String): Boolean {
+        val op = snapshot.commerce.operation ?: return false
+        if (op.id != id || op.phase == PurchasePhase.LOADING) return false
+        update(snapshot.copy(commerce = snapshot.commerce.copy(operation = null)))
+        return true
+    }
+    fun retryPurchase(id: String, newId: String, now: Long, outcome: DemoPurchaseOutcome): Boolean {
+        val op = snapshot.commerce.operation ?: return false
+        if (op.id != id || op.phase != PurchasePhase.FAILED) return false
+        update(snapshot.copy(commerce = snapshot.commerce.copy(operation = op.copy(id = newId, readyAt = now + 1500,
+            phase = PurchasePhase.LOADING, outcome = outcome))))
+        return true
+    }
+    /** Clearing the successful purchase and accepting its continuation are one stored snapshot. */
+    fun resumePurchase(id: String, newJobId: String, now: Long, fail: Boolean = false): SubmitResult? {
+        val op = snapshot.commerce.operation ?: return null
+        if (op.id != id || op.phase != PurchasePhase.SUCCEEDED) return null
+        val intent = op.continuation ?: return null
+        val commerce = snapshot.commerce.copy(operation = null)
+        val result = when (intent.action) {
+            CreationAction.GENERATE -> submit(intent.target, newJobId, now, fail, commerce)
+            CreationAction.RETRY -> retryJob(intent.target, now, fail, commerce)
+        }
+        // Invalid/insufficient drafts and an already-running job also consume the continuation once.
+        if (snapshot.commerce.operation?.id == id) update(snapshot.copy(commerce = commerce))
+        return result
+    }
+    private fun settlePurchase(now: Long) {
+        val op = snapshot.commerce.operation ?: return
+        if (op.phase != PurchasePhase.LOADING || now < op.readyAt) return
+        var account = snapshot.account
+        var receipts = snapshot.commerce.receipts
+        val phase = when (op.outcome) {
+            DemoPurchaseOutcome.CANCEL -> PurchasePhase.CANCELLED
+            DemoPurchaseOutcome.ERROR -> PurchasePhase.FAILED
+            DemoPurchaseOutcome.SUCCESS -> {
+                val product = if (op.action == PurchaseAction.RESTORE)
+                    receipts.lastOrNull { it.product.kind == OfferKind.PRO }?.product else op.product
+                if (product == null) PurchasePhase.EMPTY
+                else {
+                    if (product.kind == OfferKind.PRO) account = account.copy(isPro = true, plan = product.plan)
+                    else account = account.copy(tokens = (account.tokens.toLong() + product.tokens).coerceAtMost(Int.MAX_VALUE.toLong()).toInt())
+                    if (op.action == PurchaseAction.BUY) receipts = receipts + DemoReceipt(op.id, product)
+                    PurchasePhase.SUCCEEDED
+                }
+            }
+        }
+        update(snapshot.copy(account = account, commerce = DemoCommerce(receipts, op.copy(phase = phase))))
     }
     private fun update(value: DemoSnapshot) { snapshot = value; store.save(value) }
 }

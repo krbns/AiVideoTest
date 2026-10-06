@@ -1,6 +1,6 @@
 # AiVideoTest: план экранов и сценариев
 
-Дата: 6 октября 2026. Статус: P1–P4 реализованы в пределах демо: каталоги / навигация, Prompt → фото → Result, Library / Favorites и экспорт / удаление результатов. Подробности — `first-batch-report.md`, `second-batch-report.md`, `third-batch-report.md`; следующая порция P5 — PRO / Tokens и demo-покупки.
+Дата: 6 октября 2026. Статус: P1–P5 реализованы в пределах демо: каталоги / навигация, Prompt → фото → Result, Library / Favorites, экспорт / удаление результатов и PRO / Tokens с demo-покупками / restore. Подробности — `first-batch-report.md`, `second-batch-report.md`, `third-batch-report.md`, `fourth-batch-report.md`; следующая порция P6 — онбординг и полные Settings.
 
 ## Цель первого этапа
 
@@ -12,7 +12,7 @@
 
 ## Исходное состояние проекта
 
-Один модуль `app`, minSdk 24, compileSdk и targetSdk 37. Порции 1–3 реализованы на демоданных. По запросу пользователя UI переведён на Jetpack Compose / Material 3, навигация — Navigation Compose. AppViewModel, DemoSession и сохранённые данные остаются прежними. Серверного слоя нет. Подробности — в `compose-migration-report.md`.
+Один модуль `app`, minSdk 24, compileSdk и targetSdk 37. Порции 1–4 реализованы на демоданных. По запросу пользователя UI переведён на Jetpack Compose / Material 3, навигация — Navigation Compose. AppViewModel, DemoSession и сохранённые данные остаются прежними. Серверного слоя нет. Подробности — в `compose-migration-report.md`.
 
 Все текущие и будущие экраны, общие компоненты, диалоги и sheets реализуются в Compose, в том же модуле. Цветовые и числовые типографические ресурсы остаются источником токенов. XML сохраняется для системной темы, иконок и платформенных ресурсов.
 

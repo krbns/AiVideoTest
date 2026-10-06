@@ -30,14 +30,10 @@
   <string name="empty_library_title">Nothing here yet</string>
   <string name="empty_library_body">Your creations will appear here.</string>
   <string name="explore_effects">Explore effects</string>
-  <string name="got_it">Got it</string>
-  <string name="tokens_title">Your balance</string>
-  <string name="tokens_body">Available tokens: %1$d. Token packs and subscriptions will be available in a later demo update.</string>
   <string name="subscription_title">Subscription data</string>
-  <string name="subscription_body">Information about subscription benefits and prices</string>
   <string name="more">More</string>
   <string name="demo_account">Demo account</string>
-  <string name="settings_preview">Subscription and account options will be available in a later update.</string>
+  <string name="settings_preview">Purchases and restore are simulated on this device. No payment is charged.</string>
   <string name="debug_title">Demo controls</string>
   <string name="debug_free">Free account · 5 tokens</string>
   <string name="debug_pro">PRO account · 100 tokens</string>
@@ -98,8 +94,6 @@
   <string name="sample_one">Sample portrait 1</string>
   <string name="sample_two">Sample portrait 2</string>
   <string name="camera_unavailable">Camera is unavailable. Choose a gallery or sample photo.</string>
-  <string name="insufficient_title">Not enough tokens</string>
-  <string name="demo_credits">Add demo tokens</string>
   <string name="creating">Creating</string>
   <string name="creating_video">Your demo video is being prepared. You can leave this screen and return to the creation from Library.</string>
   <string name="creating_photo">Your demo photo is being prepared. You can leave this screen and return to the creation from Library.</string>

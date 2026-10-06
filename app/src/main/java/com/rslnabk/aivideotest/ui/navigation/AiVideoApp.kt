@@ -23,6 +23,7 @@ import com.rslnabk.aivideotest.ui.catalog.BrowserScreen
 import com.rslnabk.aivideotest.ui.effect.EffectScreen
 import com.rslnabk.aivideotest.ui.generator.*
 import com.rslnabk.aivideotest.ui.result.ResultScreen
+import com.rslnabk.aivideotest.ui.offers.*
 import com.rslnabk.aivideotest.ui.common.*
 import com.rslnabk.aivideotest.ui.theme.Ds
 
@@ -60,6 +61,13 @@ class AppNavigator(val nav: NavHostController) {
         nav.navigate("result/$id") { popUpTo("creating/{job}") { inclusive = true }; launchSingleTop = true }
     }
     fun back() { nav.popBackStack() }
+    fun openOffers(kind: OfferKind, continuation: CreationIntent? = null) {
+        closeOffers()
+        nav.navigate("offers/${kind.name}?action=${continuation?.action?.name.orEmpty()}&target=${Uri.encode(continuation?.target.orEmpty())}") { launchSingleTop = true }
+    }
+    fun closeOffers() {
+        if (nav.currentDestination?.route?.startsWith("offers/") == true) nav.popBackStack()
+    }
 
 }
 
@@ -101,6 +109,12 @@ class AppNavigator(val nav: NavHostController) {
             composable("generator/{key}") { GeneratorScreen(it.arguments!!.getString("key")!!, snapshot, model, host, actions) }
             composable("creating/{job}") { CreatingScreen(it.arguments!!.getString("job")!!, snapshot, host, actions) }
             composable("result/{job}") { ResultScreen(it.arguments!!.getString("job")!!, snapshot, export, host, actions) }
+            composable("offers/{kind}?action={action}&target={target}", arguments = listOf(
+                navArgument("action") { defaultValue = "" }, navArgument("target") { defaultValue = "" })) { backStack ->
+                val args = backStack.arguments!!
+                val continuation = runCatching { CreationIntent(CreationAction.valueOf(args.getString("action")!!), args.getString("target")!!) }.getOrNull()
+                OfferScreen(OfferKind.valueOf(args.getString("kind")!!), continuation, snapshot, model, actions)
+            }
         }
         if (root && !keyboard) {
             val icons = listOf(R.drawable.ic_video, R.drawable.ic_photo, R.drawable.ic_heart_outline, R.drawable.ic_clock, R.drawable.ic_settings)
@@ -117,6 +131,7 @@ class AppNavigator(val nav: NavHostController) {
         }
     }
     AppDialogs(actions, snapshot, model, host)
+    PurchaseStatus(snapshot.commerce.operation, host, model, actions)
     if (export?.phase == ExportPhase.SUCCEEDED || export?.phase == ExportPhase.FAILED) {
         val operation = export!!
         val failed = operation.phase == ExportPhase.FAILED

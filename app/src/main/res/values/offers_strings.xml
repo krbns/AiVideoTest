@@ -1,0 +1,56 @@
+<resources>
+    <string name="unlock_pro">Unlock PRO Access</string>
+    <string name="pro_effects">Access to all effects</string>
+    <string name="pro_unlimited">Unlimited generation</string>
+    <string name="pro_functions">Access to all functions</string>
+    <string name="plan_year">Year</string>
+    <string name="plan_week">Week</string>
+    <string name="plan_price">Just %1$s / %2$s</string>
+    <string name="plan_renewable">Auto renewable. Cancel anytime.</string>
+    <string name="save_40" formatted="false">SAVE 40%</string>
+    <string name="need_tokens">Need More Tokens?</string>
+    <string name="tokens_subtitle">Choose how much you don\'t care</string>
+    <string name="my_tokens">"My tokens: "</string>
+    <plurals name="token_pack_amount">
+        <item quantity="one">%1$d token</item>
+        <item quantity="other">%1$d tokens</item>
+    </plurals>
+    <plurals name="token_pack_description">
+        <item quantity="one">Pack %1$d: %2$d token, %3$s</item>
+        <item quantity="other">Pack %1$d: %2$d tokens, %3$s</item>
+    </plurals>
+    <string name="terms_of_use">Terms of use</string>
+    <string name="privacy_policy">Privacy Policy</string>
+    <string name="restore_purchases">Restore Purchases</string>
+    <string name="offer_demo_note">Demo purchase · no payment is charged</string>
+    <string name="pro_demo_policy">In this demo, PRO and tokens are separate. Creations still use tokens.</string>
+    <string name="demo_legal_body">This is a demo preview. No payment is charged and no subscription renews. Terms for real purchases are not available in this preview.</string>
+    <string name="purchase_loading">Processing demo purchase</string>
+    <string name="restore_loading">Restoring demo purchases</string>
+    <string name="purchase_pro_success">PRO access activated</string>
+    <plurals name="purchase_tokens_success">
+        <item quantity="one">%1$d token added</item>
+        <item quantity="other">%1$d tokens added</item>
+    </plurals>
+    <string name="restore_success">PRO access restored</string>
+    <string name="purchase_success_body">Your account has been updated.</string>
+    <string name="purchase_pro_continue_body">PRO is active. Your draft is saved; tokens are still required to create.</string>
+    <string name="purchase_cancelled">Purchase cancelled</string>
+    <string name="restore_cancelled">Restore cancelled</string>
+    <string name="purchase_cancelled_body">Your balance and subscription were not changed.</string>
+    <string name="purchase_failed">Could not complete purchase</string>
+    <string name="restore_failed">Could not restore purchases</string>
+    <string name="purchase_failed_body">Your account was not changed. Try again or return to your input.</string>
+    <string name="restore_empty">Nothing to restore</string>
+    <string name="restore_empty_body">No demo subscription purchase was found. Token packs are consumable and are not credited again by restore.</string>
+    <string name="purchase_resume">Continue creation</string>
+    <string name="purchase_done">Done</string>
+    <string name="account_free">Free account</string>
+    <string name="account_pro">PRO account</string>
+    <string name="account_plan">PRO · %1$s</string>
+    <string name="get_tokens">Get tokens</string>
+    <string name="debug_purchase_success">Next purchase / restore: success</string>
+    <string name="debug_purchase_cancel">Next purchase / restore: cancelled</string>
+    <string name="debug_purchase_error">Next purchase / restore: error</string>
+    <string name="debug_purchase_ready">The next demo purchase or restore will use this outcome.</string>
+</resources>

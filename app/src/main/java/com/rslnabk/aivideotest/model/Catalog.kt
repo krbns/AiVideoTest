@@ -19,9 +19,9 @@ data class Effect(
     val id: String, val kind: MediaKind, @param:StringRes val title: Int,
     @param:DrawableRes val image: Int, val categories: Set<Category>, val tokenCost: Int
 )
-data class DemoAccount(val tokens: Int = 5, val isPro: Boolean = false)
+data class DemoAccount(val tokens: Int = 5, val isPro: Boolean = false, val plan: SubscriptionPlan? = null)
 data class DemoSnapshot(
     val favorites: Set<String> = emptySet(), val account: DemoAccount = DemoAccount(),
     val drafts: Map<String, GenerationDraft> = emptyMap(), val jobs: List<GenerationJob> = emptyList(),
-    val instructionSeen: Boolean = false
+    val instructionSeen: Boolean = false, val commerce: DemoCommerce = DemoCommerce()
 )

@@ -90,7 +90,7 @@ SF Pro — семейство в исходнике. Файлов шрифта, 
 
 ## Компоненты Compose
 
-`DsButton`, `RoundAction`, `ScreenHeader`, `Segmented`, `InfoDialog`, `BalanceButton`, `EffectCard`, `GenerationCard`, `PromptEditor` и Compose ModalBottomSheet используют семантическую палитру. Высоты кнопок 56/44dp и радиус поля запроса читаются из component_dimens.xml. Disabled Generate сохраняет background/secondary и label/quaternary из второй порции. Динамическая палитра отключена, чтобы сохранить цвета PDF. DsCardSurface и DsSearchField заменяют соответствующие базовые XML-стили; примеры доступны в DesignSystemPreview.
+`DsButton`, `RoundAction`, `ScreenHeader`, `Segmented`, `InfoDialog`, `BalanceButton`, `EffectCard`, `GenerationCard`, `PromptEditor` и Compose ModalBottomSheet используют семантическую палитру. Высоты кнопок 56/44dp и радиус поля запроса читаются из component_dimens.xml. Disabled Generate сохраняет background/secondary и label/quaternary из второй порции. Динамическая палитра отключена, чтобы сохранить цвета PDF. DsCardSurface и DsSearchField заменяют соответствующие базовые XML-стили; примеры доступны в DesignSystemPreview. PRO / Tokens используют DsCardSurface для тарифов и пакетов, DsButton для Continue, семантические цвета и роли типографики. OfferScreen добавляет выбранный тариф, SAVE 40%, реальный demo-баланс и состояния покупок; числа палитры / типографики не менялись.
 
 ```kotlin
 AiVideoTheme {

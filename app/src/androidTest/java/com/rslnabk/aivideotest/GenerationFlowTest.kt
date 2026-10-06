@@ -23,7 +23,7 @@ class GenerationFlowTest : ComposeFlowTest() {
             ui.waitForIdle()
             scenario.onActivity { assertEquals("Тёплый закат", it.model.draft("prompt_photo").prompt) }
             scenario.recreate(); tag("prompt_input").assertTextContains("Тёплый закат")
-            tag("generate").performScrollTo().performClick(); text(R.string.demo_credits).performClick()
+            tag("generate").performScrollTo().performClick(); buyTokens(scenario)
             await(scenario) { it.snapshot.value!!.jobs.singleOrNull()?.status == JobStatus.SUCCEEDED }
             tag("share").assertIsDisplayed()
             scenario.onActivity { assertEquals(95, it.model.snapshot.value!!.account.tokens) }
@@ -41,7 +41,7 @@ class GenerationFlowTest : ComposeFlowTest() {
             await(scenario) { it.draft("video_gold").photoStatus == PhotoStatus.READY }
             tag("photo_card").performClick(); text(R.string.cancel).performClick()
             scenario.onActivity { assertEquals("asset:good1", it.model.draft("video_gold").photo) }
-            tag("generate").performScrollTo().performClick(); text(R.string.demo_credits).performClick()
+            tag("generate").performScrollTo().performClick(); buyTokens(scenario)
             await(scenario) { it.snapshot.value!!.jobs.singleOrNull()?.status == JobStatus.SUCCEEDED }
             tag("video").assertIsDisplayed(); tag("playback").performClick().assertTextEquals("Play")
             scenario.recreate(); tag("playback").assertTextEquals("Play")
@@ -76,5 +76,10 @@ class GenerationFlowTest : ComposeFlowTest() {
             tag("share").assertIsDisplayed()
             scenario.onActivity { assertEquals(90, it.model.snapshot.value!!.account.tokens) }
         }
+    }
+    private fun buyTokens(scenario: ActivityScenario<MainActivity>) {
+        tag("pack_1").performScrollTo().performClick()
+        await(scenario) { it.snapshot.value!!.commerce.operation?.phase == PurchasePhase.SUCCEEDED }
+        text(R.string.purchase_resume).performClick()
     }
 }

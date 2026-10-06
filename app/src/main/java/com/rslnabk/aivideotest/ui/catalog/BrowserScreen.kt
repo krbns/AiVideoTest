@@ -110,9 +110,12 @@ import com.rslnabk.aivideotest.ui.theme.Ds
                         Column(Modifier.fillMaxWidth().clip(RoundedCornerShape(24.dp)).background(Ds.colors.accentPrimaryAlpha)
                             .border(1.dp, Ds.colors.accentPrimary, RoundedCornerShape(24.dp)).padding(16.dp), verticalArrangement = Arrangement.spacedBy(16.dp)) {
                             Text(stringResource(R.string.subscription_title), style = Ds.type.title3Regular, color = Ds.colors.labelPrimary)
-                            Text(stringResource(R.string.subscription_body), color = Ds.colors.labelTertiary, style = Ds.type.subheadlineRegular)
-                            DsButton(stringResource(R.string.more), Modifier.fillMaxWidth()) { actions.show("subscription") }
+                            Text(if (snapshot.account.plan != null) stringResource(R.string.account_plan, stringResource(if (snapshot.account.plan == SubscriptionPlan.YEAR) R.string.plan_year else R.string.plan_week))
+                                else stringResource(if (snapshot.account.isPro) R.string.account_pro else R.string.account_free), color = Ds.colors.labelTertiary, style = Ds.type.subheadlineRegular, modifier = Modifier.testTag("account_status"))
+                            DsButton(stringResource(R.string.more), Modifier.fillMaxWidth().testTag("open_pro")) { actions.openOffers(OfferKind.PRO) }
                         }
+                        DsButton(stringResource(R.string.get_tokens), Modifier.fillMaxWidth()) { actions.openOffers(OfferKind.TOKENS) }
+                        DsButton(stringResource(R.string.restore_purchases), Modifier.fillMaxWidth().testTag("restore_settings"), enabled = snapshot.commerce.operation == null) { model.restorePurchases() }
                         Text(stringResource(R.string.demo_account), style = Ds.type.headlineEmphasized, color = Ds.colors.labelPrimary)
                         Text(stringResource(R.string.settings_preview), color = Ds.colors.labelTertiary, style = Ds.type.subheadlineRegular)
                     }

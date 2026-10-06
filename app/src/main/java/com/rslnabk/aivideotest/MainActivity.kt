@@ -74,9 +74,28 @@ class MainActivity : ComponentActivity() {
     private fun handleSubmit(result: SubmitResult, action: String, key: String) {
         when (result) {
             is SubmitResult.Accepted -> openJob(result.jobId)
-            is SubmitResult.InsufficientBalance -> navigator.show("balance", key, "$action:${result.required}")
+            is SubmitResult.InsufficientBalance -> navigator.openOffers(OfferKind.TOKENS, CreationIntent(if (action == "retry") CreationAction.RETRY else CreationAction.GENERATE, key))
             SubmitResult.InvalidDraft -> Unit
         }
+    }
+    fun finishPurchase(id: String) {
+        val operation = model.snapshot.value!!.commerce.operation?.takeIf { it.id == id && it.phase == PurchasePhase.SUCCEEDED } ?: return
+        val continuation = operation.continuation
+        if (continuation == null) { model.acknowledgePurchase(id); navigator.closeOffers(); return }
+        val restoreOrigin = navigator.nav.currentDestination?.route?.startsWith("offers/") != true
+        val result = model.resumePurchase(id) ?: return
+        navigator.closeOffers()
+        if (restoreOrigin) {
+            // A cold process has the durable continuation but no previous navigation stack.
+            if (continuation.action == CreationAction.RETRY) {
+                model.snapshot.value!!.jobs.find { it.id == continuation.target }?.let { navigator.openLibrary(it.draft.kind) }
+            } else {
+                val draft = model.draft(continuation.target)
+                if (draft.effectId == null) navigator.openPrompt(draft.kind)
+                else { navigator.selectTab(if (draft.kind == MediaKind.VIDEO) AppTab.VIDEO else AppTab.PHOTO); navigator.openGenerator(continuation.target) }
+            }
+        }
+        handleSubmit(result, if (continuation.action == CreationAction.RETRY) "retry" else "generate", continuation.target)
     }
     fun requestPhoto(key: String) = navigator.show(if (model.snapshot.value!!.instructionSeen) "source" else "instruction", key)
     fun confirmDelete(id: String) = navigator.show("delete", id)

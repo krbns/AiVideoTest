@@ -22,7 +22,7 @@ import com.rslnabk.aivideotest.ui.theme.Ds
     val account = snapshot.account
     val description = stringResource(R.string.balance_accessibility, account.tokens)
     Box(Modifier.clip(RoundedCornerShape(22.dp)).background(Ds.colors.backgroundSecondary)
-        .combinedClickable(onClick = { actions.show("tokens") }, onLongClick = if (BuildConfig.DEBUG) { { actions.show("debug") } } else null)
+        .combinedClickable(onClick = { actions.openOffers(OfferKind.TOKENS) }, onLongClick = if (BuildConfig.DEBUG) { { actions.show("debug") } } else null)
         .heightIn(min = 44.dp).padding(horizontal = 16.dp, vertical = 12.dp)
         .semantics { contentDescription = description }.testTag("balance")) {
         Text(stringResource(if (account.isPro) R.string.pro_balance_value else R.string.balance_value, account.tokens), color = Ds.colors.accentPrimary, style = Ds.type.headlineEmphasized)
@@ -33,17 +33,11 @@ import com.rslnabk.aivideotest.ui.theme.Ds
     val key = actions.dialogKey
     val dismiss = actions::dismiss
     when (actions.dialog) {
-        "tokens" -> InfoDialog(stringResource(R.string.tokens_title), stringResource(R.string.tokens_body, snapshot.account.tokens), dismiss, stringResource(R.string.got_it))
-        "subscription" -> InfoDialog(stringResource(R.string.subscription_title), stringResource(R.string.settings_preview), dismiss, stringResource(R.string.got_it))
+        "terms", "privacy" -> InfoDialog(stringResource(if (actions.dialog == "terms") R.string.terms_of_use else R.string.privacy_policy), stringResource(R.string.demo_legal_body), dismiss)
         "reset" -> InfoDialog(stringResource(R.string.debug_reset_title), stringResource(R.string.debug_reset_body), dismiss,
             stringResource(R.string.reset), { dismiss(); model.reset() }, stringResource(R.string.cancel))
         "delete" -> InfoDialog(stringResource(R.string.delete_title), stringResource(R.string.delete_body), dismiss,
             stringResource(R.string.delete_generation), { dismiss(); host.deleteGeneration(key) }, stringResource(R.string.cancel))
-        "balance" -> {
-            val parts = actions.dialogValue.split(':'); val cost = parts.last().toInt()
-            InfoDialog(stringResource(R.string.insufficient_title), pluralStringResource(R.plurals.insufficient_body, cost, cost), dismiss,
-                stringResource(R.string.demo_credits), { dismiss(); model.addDemoCredits(); if (parts.first() == "retry") host.retryJob(key) else host.generate(key) }, stringResource(R.string.cancel))
-        }
         "video_error" -> InfoDialog(null, stringResource(R.string.video_unavailable), dismiss, stringResource(R.string.retry), {
             dismiss(); actions.nav.currentBackStackEntry?.savedStateHandle?.set("video_retry", System.nanoTime())
         }, stringResource(R.string.cancel))
@@ -51,7 +45,8 @@ import com.rslnabk.aivideotest.ui.theme.Ds
             title = { Text(stringResource(R.string.debug_title)) },
             text = {
                 Column(Modifier.verticalScroll(rememberScrollState())) {
-                    val options = listOf(R.string.debug_free, R.string.debug_pro, R.string.debug_zero, R.string.debug_reset, R.string.debug_photo_error, R.string.debug_generation_error, R.string.debug_export_error)
+                    val options = listOf(R.string.debug_free, R.string.debug_pro, R.string.debug_zero, R.string.debug_reset, R.string.debug_photo_error, R.string.debug_generation_error, R.string.debug_export_error,
+                        R.string.debug_purchase_success, R.string.debug_purchase_cancel, R.string.debug_purchase_error)
                     options.forEachIndexed { index, resource ->
                         TextButton({
                             dismiss()
@@ -63,6 +58,7 @@ import com.rslnabk.aivideotest.ui.theme.Ds
                                 4 -> { model.failNextPhoto = true; host.toast(R.string.debug_error_ready) }
                                 5 -> { model.failNextGeneration = true; host.toast(R.string.debug_error_ready) }
                                 6 -> { model.exports.failNext = true; host.toast(R.string.debug_error_ready) }
+                                7, 8, 9 -> { model.nextPurchaseOutcome = DemoPurchaseOutcome.entries[index - 7]; host.toast(R.string.debug_purchase_ready) }
                             }
                         }, Modifier.fillMaxWidth()) { Text(stringResource(resource), color = Ds.colors.accentPrimary) }
                     }

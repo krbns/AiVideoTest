@@ -1,0 +1,13 @@
+[
+  {
+    "resource": "demo_offer_hero",
+    "page": 13,
+    "image_object_index": 0,
+    "source": "Standalone artwork; crop off-page top only. Native gradient is rendered in Compose.",
+    "size": [
+      1024,
+      1347
+    ],
+    "sha256": "988f911ec9ebfab899819a7c1025132e617fac7754ee0c99718bab0ca0e08adb"
+  }
+]
