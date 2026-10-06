@@ -15,6 +15,11 @@ import androidx.compose.ui.unit.Density
 import androidx.compose.ui.unit.dp
 import androidx.test.core.app.ActivityScenario
 import androidx.test.ext.junit.runners.AndroidJUnit4
+import androidx.lifecycle.SavedStateHandle
+import androidx.navigation.compose.rememberNavController
+import com.rslnabk.aivideotest.model.AppTab
+import com.rslnabk.aivideotest.ui.catalog.BrowserScreen
+import com.rslnabk.aivideotest.ui.navigation.AppNavigator
 import com.rslnabk.aivideotest.ui.generator.PromptEditor
 import com.rslnabk.aivideotest.ui.theme.AiVideoTheme
 import org.junit.Assert.*
@@ -56,4 +61,27 @@ class PromptLayoutTest : ComposeFlowTest() {
 
     @Test fun compactLargeFontPromptCounterCopyAndClearRemainReadable() = controlsFit(1.5f)
     @Test fun compactMaximumFontPromptCounterCopyAndClearRemainReadable() = controlsFit(2f)
+
+    @Test fun landscapeImeHeightKeepsPromptAndActionsReachable() {
+        ActivityScenario.launch(MainActivity::class.java).use { scenario ->
+            scenario.onActivity { host ->
+                val handle = SavedStateHandle(mapOf("mode" to 1))
+                host.setContent {
+                    AiVideoTheme {
+                        val snapshot by host.model.snapshot.observeAsState(host.model.snapshot.value!!)
+                        val nav = rememberNavController()
+                        val actions = remember(nav) { AppNavigator(nav) }
+                        Box(Modifier.width(640.dp).height(90.dp)) {
+                            BrowserScreen(AppTab.VIDEO, null, null, handle, snapshot, host.model, host, actions)
+                        }
+                    }
+                }
+            }
+            tag("browser_list").performScrollToNode(hasTestTag("prompt_input"))
+            tag("prompt_input").performScrollTo().assertIsDisplayed().performTextInput("Landscape input")
+            await(scenario) { it.draft("prompt_video").prompt == "Landscape input" }
+            tag("generate").performScrollTo().assertIsDisplayed()
+            tag("counter").performScrollTo().assertTextEquals("15/300")
+        }
+    }
 }

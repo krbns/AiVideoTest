@@ -1,8 +1,8 @@
 # AiVideoTest: план экранов и сценариев
 
-Дата: 6 октября 2026. Статус: P1–P6 реализованы в пределах демо: каталоги / навигация, Prompt → фото → Result, Library / Favorites, экспорт / удаление результатов и PRO / Tokens с demo-покупками / restore, онбординг, разрешения и полные Settings. Подробности — `first-batch-report.md`, `second-batch-report.md`, `third-batch-report.md`, `fourth-batch-report.md`, `fifth-batch-report.md`; следующая порция P7 — общая матрица сценариев и визуальная доводка.
+Дата: 6 октября 2026. Статус: P1–P7 реализованы в пределах демо: каталоги / навигация, Prompt → фото → Result, Library / Favorites, экспорт / удаление результатов и PRO / Tokens с demo-покупками / restore, онбординг, разрешения и полные Settings. Подробности — `first-batch-report.md`, `second-batch-report.md`, `third-batch-report.md`, `fourth-batch-report.md`, `fifth-batch-report.md`; P7 — общая матрица сценариев и визуальная доводка — завершён на Android 14/16 с ограничениями из итогового отчёта.
 
-P7 начат: добавлены `demo-coverage.md`, regression-проверки и исправления адаптивной навигации/Prompt/заголовка/видео. 43 device + 33 unit tests прошли до последних исправлений. Финальная сборка и новый device-прогон ожидают разрешённого доступа Gradle/эмулятора; подробный текущий статус — `sixth-batch-report.md`.
+P7 завершён для demo: все 16 семейств связаны с реализацией и доказательствами в `demo-coverage.md`; 46 device tests на каждом API 34/36 и 33 unit tests прошли без ошибок. Проверены native крупный шрифт, клавиатура, поворот, playback и экспорт. API 24–28/37, физические устройства и производственные интеграции остаются за пределами выполненной проверки; подробности — `sixth-batch-report.md`.
 
 ## Цель первого этапа
 

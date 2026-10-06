@@ -23,6 +23,8 @@
 | S15 / 241, 286–288, 291, 293, 295, 297–298, 304, 306 | `BrowserScreen(LIBRARY)`, `GenerationCard` | Photos/Videos; empty/running/failed/ready; immutable retry; delete/cancel/last empty; открытие Result | `LibraryFlowTest`, `LibrarySessionTest`, `DemoMatrixTest` |
 | S16 / 326, 328, 334–337, 339–340 | `SettingsScreen`, `MessageScreen`, shared dialogs | Free/PRO/Low tokens; More; notifications/preference vs OS; share/rate/report/restore/cache/letter/privacy/terms/version | `PreferencesFlowTest`, `PreferencesSessionTest`, `PreviewCacheTest`, `NotificationFlowTest` |
 
+Финальная проверка P7: 46 device tests на каждом из API 34 и 36, 33 unit tests; везде 0 failures/errors/skipped. Native API 34: 390×844dp, 320×640dp при 200%, горизонтальный viewport и настоящий Android rotation с IME. Дополнительная адаптация Prompt и отчёты находятся в рабочем дереве после `76cdc5a`.
+
 ## Сквозная матрица
 
 | Группа | Как проверяется | Граница доказательства |
@@ -34,7 +36,7 @@
 | Результат/экспорт | Actual JPEG/MP4; MIME/ClipData/read grants; rollback pending gallery; export error/retry; picker cancel/recreate; interrupted journal | Получатель не выбирается; внешняя отправка не выполняется. Interrupted Files сообщает ошибку; частичный внешний документ может остаться |
 | Settings/уведомления | Preference/OS отдельно; opt-in/opt-out; ready claim один раз; cold notification intent; cache не удаляет originals/history/exports; все ссылки доступны | Уведомление о генерации приходит при работающем приложении либо после запуска; server push нет |
 | Lifecycle | Recreate на Prompt/Effect/Creating/Result/Offers/forms; persisted JSON; реальная остановка процесса вручную | Не гарантируется текущая UI-route после force-stop; сохраняются долговременные demo-данные |
-| Крупный шрифт | `AdaptiveTabBarTest` и `PromptLayoutTest`: 320dp, 150%/200%; целые подписи, доступные 48dp tab targets, counter/copy/clear | Текст не уменьшается и font scale не отключается; панель вкладок может занимать несколько строк |
+| Крупный шрифт | `AdaptiveTabBarTest` и `PromptLayoutTest`: 320dp, 150%/200%; целые подписи, доступные 48dp tab targets, counter/copy/clear; полный заголовок; Prompt viewport 90dp | Текст не уменьшается и font scale не отключается; панель вкладок может занимать несколько строк |
 | Playback/память | `DemoMatrixTest`: pause/recreate/background/resume; `PhotoThumbnailTest`: actual bitmap, минимум 16× меньше allocation на fixture | Эмулятор не заменяет измерения на физическом устройстве; показатели FPS не заявлены |
 
 ## Открытые вопросы источника

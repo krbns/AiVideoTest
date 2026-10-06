@@ -1,11 +1,12 @@
 # Шестая порция: P7, проверка demo и визуальная доводка
 
-Дата: 6 октября 2026. Основа: `fd39f2b`. Работа относится к A27–A30. UI остаётся Jetpack Compose, один модуль `app`; MainActivity, AppViewModel, DemoSession, storage и платформенные Activity Result-контракты сохраняют свои роли.
+Дата: 6 октября 2026. Основа: `fd39f2b`; основные исправления зафиксированы в `76cdc5a`, дополнительная адаптация Prompt под горизонтальную клавиатуру и итоговые отчёты сохранены в рабочем дереве. Работа относится к A27–A30. UI остаётся Jetpack Compose, один модуль `app`; MainActivity, AppViewModel, DemoSession, storage и платформенные Activity Result-контракты сохраняют свои роли.
 
 ## Исправления
 
 - Нижняя навигация измеряет подписи с действующим масштабом шрифта. На опорном размере остаётся одна строка, на узком экране с крупным шрифтом вкладки переносятся. Все пять разделов доступны; подписи целиком, выбранное состояние и роль Tab сохранены, touch targets не меньше 48dp. Font scale и исходные токены не переопределяются.
 - Корневой заголовок измеряет доступную ширину вместе с балансом. При нехватке места баланс переходит на отдельную строку; Settings не превращается в «Sett…» при 200%. Детальные экраны сохраняют Back.
+- При доступной высоте Prompt менее 300dp заголовок и переключатель прокручиваются вместе с формой: горизонтальная клавиатура больше не оставляет редактору нулевую высоту. Добавлен сценарий ввода и доступа к действиям при viewport 90dp.
 - Счётчик Prompt, Copy/Clear переносятся при нехватке ширины. Карточки стилей учитывают ширину увеличенной подписи, а ряд сохраняет горизонтальную прокрутку.
 - По опорным страницам PDF исправлены активные сегменты Trends/Prompt и Photos/Videos: лаймовая заливка, инвертированные подписи/иконки, иконка над подписью. Заголовок карточки Prompt стал акцентным; поле не добавляет отсутствующую в PDF чёрную внутреннюю подложку.
 - Крестик закрытия PRO/Tokens — существующая vector icon с описанием Close и 48dp областью, поэтому крупный шрифт не обрезает управляющий символ.
@@ -22,14 +23,15 @@
 
 ## Проверки
 
-- Полный прогон до последних правок заголовка и video poster: 43 instrumentation tests на Android 14 / API 34, 0 failures/errors/skipped. 33 unit tests, 0 failures/errors/skipped. Добавлены ещё две regression-проверки крупного заголовка; финальный прогон 45 тестов пока не выполнен.
-- Debug, AndroidTest и unsigned optimized Release до последнего изменения заголовка успешно собраны. Lint: 0 errors, 33 warnings, 1 hint. Предупреждения о прежних зависимостях/общих компонентах/unused resources не устранены обновлением всего проекта.
-- Ручная матрица на изолированном API 34: onboarding, PRO/Tokens, обе Trends ветки, category/effect/instruction/photo sheets, Prompt, empty Favorites/Library, Settings, rating/review; 390×844dp. На 320×640dp, 150–200% проверены перенос нижних вкладок, читаемые counter/copy/clear, Settings и Close offers. При 200% найдено обрезание заголовка; исправление ожидает сборки и повторной проверки.
-- Приложение действительно force-stopped на Creating и запущено снова: одна ready job, сохранённый prompt `Native Sunset`, баланс 90 после единственного списания с 100. Это проверка реального процесса, а не только recreate.
-- В Native UI video сохранено в Gallery; Files и Share открыты и отменены; после force-stop Share повторно не открылся. Получатель не выбирался, сообщений не отправлялось. Byte/MIME/grant/rollback проверки фото и видео включены в автоматический suite.
-- По визуальному кадру найдено дублирование poster под letterbox; исправление собрано, его окончательный native/device прогон остаётся незавершённым.
-- Media inventory: 28 WebP — 2 129 586 bytes, 9 MP4 — 2 302 091 bytes. Последний собранный debug APK — 17 728 164 bytes; unsigned release до последней правки заголовка — 6 404 415 bytes. Размер не является измерением FPS/производительности на физическом телефоне.
-- Runtime на API 36 ещё не проверен. Нельзя считать P7 финально подтверждённым: автоматическая проверка разрешения на сборку дважды завершилась таймаутом; в песочнице Gradle не может открыть глобальный wrapper/cache lock. Изменения заголовка и их tests сохранены, требуется возобновить сборку и проверки.
+- Финальный полный прогон: **46 instrumentation tests на Android 14 / API 34 и 46 на Android 16 / API 36**, в каждом 0 failures/errors/skipped. Включены новые проверки заголовка, poster и Prompt при доступной высоте 90dp. **33 unit tests**, 0 failures/errors/skipped.
+- Финальные Debug, AndroidTest и unsigned optimized Release успешно собраны. Lint: 0 errors, 34 warnings, 1 hint. Остались 24 unused resources, предупреждения о зависимостях и прежних общих компонентах; обновление всего проекта не входит в эту порцию.
+- Ручная матрица на изолированном API 34: onboarding, PRO/Tokens, обе Trends ветки, category/effect/instruction/photo sheets, Prompt, empty Favorites/Library, Settings, rating/review. Финальная сборка повторно снята при 390×844dp и 320×640dp с font scale 200%; доступны вкладки, полный Settings, ввод над клавиатурой, Generate и нижние настройки. Counter/Copy/Clear при 150–200% дополнительно проверены автоматическими tests.
+- Горизонтальный viewport 640×320dp: форма прокручивается, введённый текст и курсор видны над IME. Проверен также настоящий Android user_rotation 0→1→0 с Activity recreation: текст сохранён, ввод продолжен; скриншоты 55–56. Video воспроизводится с сохранением пропорций, Pause доступен; дублирование poster по краям устранено и подтверждено финальными native кадрами и device tests.
+- Приложение действительно force-stopped на Creating и запущено снова: одна ready job, сохранённый prompt `Native Sunset`, баланс 90 после единственного списания с 100. Эта ручная проверка выполнена до последних layout-правок; domain/storage не менялись.
+- В Native UI video сохранено в Gallery; Files и Share открыты и отменены; после force-stop Share повторно не открылся. Получатель не выбирался, сообщений не отправлялось. Byte/MIME/grant/rollback проверки фото и видео входят в финальные suites обоих API.
+- Media inventory: 28 WebP — 2 129 586 bytes, 9 MP4 — 2 302 091 bytes. Финальный debug APK — **17,196,461 bytes**; unsigned release — **6,420,799 bytes**. Debug подпись проверена `apksigner`; release не выдаётся как установочный файл. Размер не является измерением FPS/производительности на физическом телефоне.
+- APK SHA-256: `56f6538e5bd465363c69fb902c5630ec3470cd0ac2993f760cb2e1f63a8d125c`. В комплекте — финальные native screenshots, обзор, XML обоих device-прогонов и unit tests, lint XML и `validation.json`. Снимки ранних неудачных раскладок и промежуточного poster не включены.
+- **P7 завершён для согласованного этапа с демонстрационными данными**, в пределах проверки Android 14/16 и документированных ниже ограничений. Реестр связывает все 16 семейств исходника с реализацией и проверяемыми сценариями.
 
 ## Границы и неоднозначности
 
@@ -41,14 +43,19 @@
 - Runtime на API 24–28 и 37, физический телефон, разные облачные document providers, убийство процесса посередине native camera и отказ физического накопителя остаются непроверенными. minSdk 24 и targetSdk 37 сохранены; сборка/lint не считаются заменой этих проверок.
 - При прерывании записи в Files провайдер может оставить частичный документ; приложение показывает interrupted/error и предлагает повтор. Успешно экспортированные копии не удаляются вместе с историей.
 
+## Проверка вручную
+
+Установочный файл — `AiVideoTest-sixth-batch.apk`, debug-сборка. Новая установка начинает onboarding; существующая сохраняет demo-данные. После onboarding долгое нажатие на баланс открывает Demo controls: Free/PRO/нулевой баланс, Reset, ошибки следующего фото/генерации/экспорта/покупки/кэша и повтор onboarding. Панель не входит в release.
+
 ## Изменённые файлы
 
-15 файлов; пользовательские изменения `.idea` не включены.
+После `76cdc5a` изменены 6 файлов: BrowserScreen, PromptLayoutTest и четыре документа ниже. Всего 16 файлов в P7, включая дополнительную адаптацию BrowserScreen; пользовательские изменения `.idea` не включены.
 
 - `app/src/androidTest/java/com/rslnabk/aivideotest/AdaptiveTabBarTest.kt`
 - `app/src/androidTest/java/com/rslnabk/aivideotest/DemoMatrixTest.kt`
 - `app/src/androidTest/java/com/rslnabk/aivideotest/PhotoThumbnailTest.kt`
 - `app/src/androidTest/java/com/rslnabk/aivideotest/PromptLayoutTest.kt`
+- `app/src/main/java/com/rslnabk/aivideotest/ui/catalog/BrowserScreen.kt`
 - `app/src/main/java/com/rslnabk/aivideotest/data/media/PhotoThumbnail.kt`
 - `app/src/main/java/com/rslnabk/aivideotest/ui/common/Components.kt`
 - `app/src/main/java/com/rslnabk/aivideotest/ui/generator/PromptEditor.kt`

@@ -35,7 +35,7 @@ import com.rslnabk.aivideotest.ui.theme.Ds
     var categoryName by rememberSaveable { mutableStateOf((initialCategory ?: Category.POPULAR).name) }
     val category = Category.valueOf(categoryName)
     val scroll = rememberLazyListState()
-    Column(Modifier.fillMaxSize()) {
+    val chrome: @Composable () -> Unit = {
         ScreenHeader(if (initialCategory == null) stringResource(tab.title) else "", if (initialCategory == null) null else actions::back) {
             BalanceButton(snapshot, actions)
         }
@@ -57,55 +57,63 @@ import com.rslnabk.aivideotest.ui.theme.Ds
                 handle["kind"] = if (it == 0) "PHOTO" else "VIDEO"
             }
         }
-        LaunchedEffect(kind, mode, category) { if (handle.get<String>("last_filter") != "$kind:$mode:$category") { scroll.scrollToItem(0); handle["last_filter"] = "$kind:$mode:$category" } }
-        LazyColumn(Modifier.fillMaxSize().testTag("browser_list"), scroll, contentPadding = PaddingValues(bottom = 24.dp)) {
-            when {
-                initialCategory != null -> effectGrid(model.catalog.effects(kind, category), snapshot, model, host)
-                tab.kind != null && mode == 0 -> {
-                    item(key = "banner") {
-                        Image(painterResource(R.drawable.demo_banner), stringResource(R.string.try_anime),
-                            Modifier.padding(horizontal = 16.dp).padding(bottom = 12.dp).fillMaxWidth().aspectRatio(2.15f).clip(RoundedCornerShape(24.dp))
-                                .clickable { host.openEffect(model.catalog.effects(kind, Category.ANIME).first().id) }, contentScale = ContentScale.Crop)
-                    }
-                    Category.entries.forEach { group ->
-                        item(key = "heading_$group") {
-                            Row(Modifier.padding(horizontal = 16.dp).fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
-                                Text(stringResource(group.title), Modifier.weight(1f), color = Ds.colors.labelPrimary, style = Ds.type.title3Regular)
-                                DsButton(stringResource(R.string.see_all), Modifier.semantics { contentDescription = host.getString(R.string.see_all) + ": " + host.getString(group.title) }) { host.openCategory(kind, group) }
-                            }
+    }
+    LaunchedEffect(kind, mode, category) { if (handle.get<String>("last_filter") != "$kind:$mode:$category") { scroll.scrollToItem(0); handle["last_filter"] = "$kind:$mode:$category" } }
+    BoxWithConstraints(Modifier.fillMaxSize()) {
+        // A landscape IME can leave less space than the header and filters require.
+        val scrollChrome = initialCategory == null && tab.kind != null && mode == 1 && maxHeight < 300.dp
+        Column(Modifier.fillMaxSize()) {
+            if (!scrollChrome) chrome()
+            LazyColumn(Modifier.fillMaxSize().testTag("browser_list"), scroll, contentPadding = PaddingValues(bottom = 24.dp)) {
+                if (scrollChrome) item(key = "chrome") { chrome() }
+                when {
+                    initialCategory != null -> effectGrid(model.catalog.effects(kind, category), snapshot, model, host)
+                    tab.kind != null && mode == 0 -> {
+                        item(key = "banner") {
+                            Image(painterResource(R.drawable.demo_banner), stringResource(R.string.try_anime),
+                                Modifier.padding(horizontal = 16.dp).padding(bottom = 12.dp).fillMaxWidth().aspectRatio(2.15f).clip(RoundedCornerShape(24.dp))
+                                    .clickable { host.openEffect(model.catalog.effects(kind, Category.ANIME).first().id) }, contentScale = ContentScale.Crop)
                         }
-                        item(key = "row_$group") {
-                            val effects = model.catalog.effects(kind, group)
-                            val columns = (effects.size + 1) / 2
-                            LazyRow(Modifier.testTag("catalog_${group.name.lowercase()}"), contentPadding = PaddingValues(16.dp), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                                items(columns) { column ->
-                                    Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
-                                        listOf(column, column + columns).filter { it < effects.size }.forEach { index ->
-                                            EffectCard(effects[index], snapshot, model, host, Modifier.width(130.dp).height(231.dp))
+                        Category.entries.forEach { group ->
+                            item(key = "heading_$group") {
+                                Row(Modifier.padding(horizontal = 16.dp).fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
+                                    Text(stringResource(group.title), Modifier.weight(1f), color = Ds.colors.labelPrimary, style = Ds.type.title3Regular)
+                                    DsButton(stringResource(R.string.see_all), Modifier.semantics { contentDescription = host.getString(R.string.see_all) + ": " + host.getString(group.title) }) { host.openCategory(kind, group) }
+                                }
+                            }
+                            item(key = "row_$group") {
+                                val effects = model.catalog.effects(kind, group)
+                                val columns = (effects.size + 1) / 2
+                                LazyRow(Modifier.testTag("catalog_${group.name.lowercase()}"), contentPadding = PaddingValues(16.dp), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                                    items(columns) { column ->
+                                        Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                                            listOf(column, column + columns).filter { it < effects.size }.forEach { index ->
+                                                EffectCard(effects[index], snapshot, model, host, Modifier.width(130.dp).height(231.dp))
+                                            }
                                         }
                                     }
                                 }
                             }
                         }
                     }
-                }
-                tab.kind != null -> item(key = "prompt") { PromptEditor("prompt_${kind.name.lowercase()}", snapshot, model, host) }
-                tab == AppTab.FAVORITES -> {
-                    val effects = model.catalog.effects(kind).filter { it.id in snapshot.favorites }
-                    if (effects.isEmpty()) item { EmptyPanel(R.drawable.demo_empty_favorites, R.string.empty_favorites_title, R.string.empty_favorites_body, R.string.explore_effects) { actions.selectTab(if (kind == MediaKind.VIDEO) AppTab.VIDEO else AppTab.PHOTO) } }
-                    else effectGrid(effects, snapshot, model, host)
-                }
-                tab == AppTab.LIBRARY -> {
-                    val jobs = snapshot.jobs.filter { it.draft.kind == kind }.reversed()
-                    if (jobs.isEmpty()) item { EmptyPanel(R.drawable.demo_empty_library, R.string.empty_library_title, R.string.empty_library_body, R.string.start_creating) { actions.openPrompt(kind) } }
-                    else items(jobs.chunked(2), key = { it.first().id }) { pair ->
-                        Row(Modifier.padding(horizontal = 16.dp).padding(bottom = 8.dp), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                            pair.forEach { GenerationCard(it, model, host, Modifier.weight(1f)) }
-                            if (pair.size == 1) Spacer(Modifier.weight(1f))
+                    tab.kind != null -> item(key = "prompt") { PromptEditor("prompt_${kind.name.lowercase()}", snapshot, model, host) }
+                    tab == AppTab.FAVORITES -> {
+                        val effects = model.catalog.effects(kind).filter { it.id in snapshot.favorites }
+                        if (effects.isEmpty()) item { EmptyPanel(R.drawable.demo_empty_favorites, R.string.empty_favorites_title, R.string.empty_favorites_body, R.string.explore_effects) { actions.selectTab(if (kind == MediaKind.VIDEO) AppTab.VIDEO else AppTab.PHOTO) } }
+                        else effectGrid(effects, snapshot, model, host)
+                    }
+                    tab == AppTab.LIBRARY -> {
+                        val jobs = snapshot.jobs.filter { it.draft.kind == kind }.reversed()
+                        if (jobs.isEmpty()) item { EmptyPanel(R.drawable.demo_empty_library, R.string.empty_library_title, R.string.empty_library_body, R.string.start_creating) { actions.openPrompt(kind) } }
+                        else items(jobs.chunked(2), key = { it.first().id }) { pair ->
+                            Row(Modifier.padding(horizontal = 16.dp).padding(bottom = 8.dp), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                                pair.forEach { GenerationCard(it, model, host, Modifier.weight(1f)) }
+                                if (pair.size == 1) Spacer(Modifier.weight(1f))
+                            }
                         }
                     }
-                }
 
+                }
             }
         }
     }
