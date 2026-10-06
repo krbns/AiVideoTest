@@ -143,17 +143,7 @@ class AppNavigator(val nav: NavHostController) {
             }
         }
         if (root && !keyboard) {
-            val icons = listOf(R.drawable.ic_video, R.drawable.ic_photo, R.drawable.ic_heart_outline, R.drawable.ic_clock, R.drawable.ic_settings)
-            NavigationBar(containerColor = Ds.colors.backgroundPrimary, tonalElevation = 0.dp, windowInsets = WindowInsets(0)) {
-                AppTab.entries.forEachIndexed { index, tab ->
-                    NavigationBarItem(actions.root == tab, { focus.clearFocus(); actions.selectTab(tab) },
-                        icon = { DsIcon(icons[index], null, if (actions.root == tab) Ds.colors.accentPrimary else Ds.colors.labelTertiary) },
-                        label = { Text(stringResource(tab.title), style = Ds.type.caption2Regular, maxLines = 1) },
-                        modifier = Modifier.testTag("tab_${tab.name.lowercase()}"),
-                        colors = NavigationBarItemDefaults.colors(selectedIconColor = Ds.colors.accentPrimary, selectedTextColor = Ds.colors.accentPrimary,
-                            indicatorColor = Ds.colors.backgroundPrimary, unselectedTextColor = Ds.colors.labelTertiary))
-                }
-            }
+            AppTabBar(actions.root) { tab -> focus.clearFocus(); actions.selectTab(tab) }
         }
     }
     if (cacheResult != null) InfoDialog(null, stringResource(if (cacheResult == true) R.string.cache_cleared else R.string.cache_failed), model::acknowledgeCache,

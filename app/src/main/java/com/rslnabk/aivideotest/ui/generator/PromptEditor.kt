@@ -3,7 +3,6 @@ package com.rslnabk.aivideotest.ui.generator
 import android.content.ClipData
 import android.content.ClipboardManager
 import android.content.Context
-import android.graphics.BitmapFactory
 import androidx.compose.foundation.*
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyRow
@@ -21,10 +20,12 @@ import androidx.compose.ui.platform.*
 import androidx.compose.ui.res.*
 import androidx.compose.ui.semantics.*
 import androidx.compose.ui.text.input.KeyboardCapitalization
+import androidx.compose.ui.text.rememberTextMeasurer
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.ui.unit.dp
 import com.rslnabk.aivideotest.*
 import com.rslnabk.aivideotest.R
+import com.rslnabk.aivideotest.data.media.PhotoThumbnail
 import com.rslnabk.aivideotest.model.*
 import com.rslnabk.aivideotest.ui.common.*
 import com.rslnabk.aivideotest.ui.navigation.AppNavigator
@@ -39,19 +40,20 @@ import java.io.File
     val running = snapshot.jobs.any { it.id == draft.activeJobId && it.status == JobStatus.RUNNING }
     Column(Modifier.padding(horizontal = 16.dp).padding(bottom = 24.dp), verticalArrangement = Arrangement.spacedBy(16.dp)) {
         Column(Modifier.fillMaxWidth().clip(RoundedCornerShape(32.dp)).background(Ds.colors.backgroundSecondary).padding(20.dp), verticalArrangement = Arrangement.spacedBy(12.dp)) {
-            Text(stringResource(if (draft.effectId == null) R.string.describe_idea else R.string.prepare_photo), style = Ds.type.title3Emphasized, color = Ds.colors.labelPrimary)
+            Text(stringResource(if (draft.effectId == null) R.string.describe_idea else R.string.prepare_photo), style = Ds.type.title3Emphasized, color = Ds.colors.accentPrimary)
             if (draft.effectId == null) {
                 TextField(draft.prompt, { value -> model.editDraft(key) { it.copy(prompt = value) } },
                     Modifier.fillMaxWidth().heightIn(min = 130.dp).testTag("prompt_input"),
                     placeholder = { Text(stringResource(R.string.prompt_hint), style = Ds.type.subheadlineRegular) },
                     textStyle = Ds.type.subheadlineRegular, keyboardOptions = KeyboardOptions(capitalization = KeyboardCapitalization.Sentences),
                     shape = RoundedCornerShape(dimensionResource(R.dimen.ds_input_corner_radius)),
-                    colors = TextFieldDefaults.colors(focusedContainerColor = Ds.colors.backgroundPrimary,
-                        unfocusedContainerColor = Ds.colors.backgroundPrimary, focusedTextColor = Ds.colors.labelPrimary,
+                    colors = TextFieldDefaults.colors(focusedContainerColor = Ds.colors.backgroundSecondary,
+                        unfocusedContainerColor = Ds.colors.backgroundSecondary, focusedTextColor = Ds.colors.labelPrimary,
                         unfocusedTextColor = Ds.colors.labelPrimary, cursorColor = Ds.colors.accentPrimary,
                         focusedIndicatorColor = androidx.compose.ui.graphics.Color.Transparent, unfocusedIndicatorColor = androidx.compose.ui.graphics.Color.Transparent))
-                Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
-                    Text(stringResource(R.string.counter_format, draft.characterCount), Modifier.weight(1f).testTag("counter"),
+                FlowRow(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween,
+                    itemVerticalAlignment = Alignment.CenterVertically) {
+                    Text(stringResource(R.string.counter_format, draft.characterCount), Modifier.testTag("counter"),
                         style = Ds.type.caption1Regular, color = if (draft.characterCount > 300) Ds.colors.accentRed else Ds.colors.labelTertiary)
                     if (draft.prompt.isNotEmpty()) {
                         TextButton({ (host.getSystemService(Context.CLIPBOARD_SERVICE) as ClipboardManager)
@@ -92,10 +94,13 @@ import java.io.File
             Text(stringResource(R.string.select_style), color = Ds.colors.labelPrimary, style = Ds.type.headlineEmphasized)
             val titles = listOf(R.string.style_none, R.string.style_ghibli, R.string.style_3d, R.string.style_simpsons, R.string.style_fantasy)
             val images = listOf(R.drawable.ic_sparkle, R.drawable.demo_style_ghibli, R.drawable.demo_style_3d, R.drawable.demo_style_simpsons, R.drawable.demo_style_fantasy)
-            LazyRow(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+            val measurer = rememberTextMeasurer()
+            val density = LocalDensity.current
+            LazyRow(Modifier.testTag("styles"), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                 itemsIndexed(PhotoStyle.entries) { index, style ->
                     val title = stringResource(titles[index])
-                    Column(Modifier.width(72.dp).selectable(draft.style == style, role = Role.RadioButton) { model.editDraft(key) { it.copy(style = style) } }
+                    val labelWidth = with(density) { measurer.measure(title, Ds.type.caption1Regular).size.width.toDp() } + 8.dp
+                    Column(Modifier.width(labelWidth.coerceAtLeast(72.dp)).selectable(draft.style == style, role = Role.RadioButton) { model.editDraft(key) { it.copy(style = style) } }
                         .semantics { contentDescription = title }, horizontalAlignment = Alignment.CenterHorizontally) {
                         Box(Modifier.size(64.dp).clip(RoundedCornerShape(16.dp)).background(Ds.colors.backgroundSecondary)
                             .border(if (draft.style == style) 2.dp else 0.dp, if (draft.style == style) Ds.colors.accentPrimary else androidx.compose.ui.graphics.Color.Transparent, RoundedCornerShape(16.dp)), contentAlignment = Alignment.Center) {
@@ -120,15 +125,20 @@ import java.io.File
 }
 @Composable fun ReferencePhoto(reference: String?, modifier: Modifier) {
     val context = LocalContext.current
-    val bitmap by produceState<android.graphics.Bitmap?>(null, reference) {
-        value = if (reference?.startsWith("file:") == true) withContext(Dispatchers.IO) {
-            BitmapFactory.decodeFile(File(context.filesDir, "reference_photos/${reference.removePrefix("file:")}").path)
-        } else null
-    }
-    when {
-        reference == "asset:good1" || reference == "asset:good2" -> Image(painterResource(if (reference == "asset:good1") R.drawable.demo_good_1 else R.drawable.demo_good_2), null, modifier, contentScale = ContentScale.Crop)
-        bitmap != null -> Image(bitmap!!.asImageBitmap(), null, modifier, contentScale = ContentScale.Crop)
-        else -> Box(modifier, contentAlignment = Alignment.Center) { DsIcon(R.drawable.ic_photo, null) }
+    BoxWithConstraints(modifier) {
+        val width = constraints.maxWidth.coerceAtLeast(1)
+        val height = constraints.maxHeight.coerceAtLeast(1)
+        val bitmap by produceState<android.graphics.Bitmap?>(null, reference, width, height) {
+            value = null
+            value = if (reference?.startsWith("file:") == true) withContext(Dispatchers.IO) {
+                PhotoThumbnail.decode(File(context.filesDir, "reference_photos/${reference.removePrefix("file:")}"), width, height)
+            } else null
+        }
+        when {
+            reference == "asset:good1" || reference == "asset:good2" -> Image(painterResource(if (reference == "asset:good1") R.drawable.demo_good_1 else R.drawable.demo_good_2), null, Modifier.fillMaxSize(), contentScale = ContentScale.Crop)
+            bitmap != null -> Image(bitmap!!.asImageBitmap(), null, Modifier.fillMaxSize(), contentScale = ContentScale.Crop)
+            else -> Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) { DsIcon(R.drawable.ic_photo, null) }
+        }
     }
 }
 @Composable fun GeneratorScreen(key: String, snapshot: DemoSnapshot, model: AppViewModel, host: MainActivity, actions: AppNavigator) {

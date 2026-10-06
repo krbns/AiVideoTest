@@ -47,9 +47,10 @@ import com.rslnabk.aivideotest.ui.theme.Ds
                 }
             }
         }
-        Box(Modifier.weight(1f).padding(horizontal = 8.dp).clip(RoundedCornerShape(32.dp))) {
-            Image(painterResource(job.resultImage), stringResource(R.string.demo_result), Modifier.fillMaxSize(), contentScale = ContentScale.Crop)
-            if (job.draft.kind == MediaKind.VIDEO) DemoVideo(job, host, actions)
+        Box(Modifier.weight(1f).padding(horizontal = 8.dp).clip(RoundedCornerShape(32.dp)).background(Ds.colors.backgroundPrimary)) {
+            if (job.draft.kind == MediaKind.PHOTO) {
+                Image(painterResource(job.resultImage), stringResource(R.string.demo_result), Modifier.fillMaxSize().testTag("result_image"), contentScale = ContentScale.Crop)
+            } else DemoVideo(job, host, actions)
             Text(stringResource(R.string.demo_result), Modifier.align(Alignment.BottomStart).padding(16.dp).background(Ds.colors.backgroundPrimaryAlpha, RoundedCornerShape(12.dp)).padding(10.dp),
                 color = Ds.colors.labelPrimary, style = Ds.type.caption1Regular)
         }
@@ -92,7 +93,7 @@ import com.rslnabk.aivideotest.ui.theme.Ds
     LaunchedEffect(paused, resumed, ready) {
         if (ready) { if (paused || !resumed) view?.pause() else view?.start() }
     }
-    if (!ready) Image(painterResource(job.resultImage), null, Modifier.matchParentSize(), contentScale = ContentScale.Crop)
+    if (!ready) Image(painterResource(job.resultImage), null, Modifier.matchParentSize().testTag("video_poster"), contentScale = ContentScale.Crop)
     DsButton(stringResource(if (paused) R.string.play else R.string.pause), Modifier.align(Alignment.BottomEnd).padding(16.dp).testTag("playback")) {
         paused = !paused
     }

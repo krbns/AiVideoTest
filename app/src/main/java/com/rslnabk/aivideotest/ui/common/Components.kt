@@ -14,6 +14,8 @@ import androidx.compose.ui.semantics.*
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.text.style.TextOverflow
+import androidx.compose.ui.text.rememberTextMeasurer
+import androidx.compose.ui.layout.SubcomposeLayout
 import com.rslnabk.aivideotest.R
 import com.rslnabk.aivideotest.ui.theme.Ds
 
@@ -39,26 +41,50 @@ import com.rslnabk.aivideotest.ui.theme.Ds
     }
 }
 @Composable fun ScreenHeader(title: String, back: (() -> Unit)? = null, trailing: @Composable () -> Unit) {
-    Row(Modifier.fillMaxWidth().heightIn(min = 64.dp).padding(horizontal = 16.dp),
-        verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(12.dp)) {
-        if (back != null) RoundAction(R.drawable.ic_back, stringResource(R.string.back), Modifier.testTag("back"), onClick = back)
-        Text(title, Modifier.weight(1f), style = if (back == null) Ds.type.largeTitleEmphasized else Ds.type.headlineEmphasized,
-            color = Ds.colors.labelPrimary, maxLines = 1, overflow = TextOverflow.Ellipsis)
-        trailing()
+    val style = if (back == null) Ds.type.largeTitleEmphasized else Ds.type.headlineEmphasized
+    val naturalTitleWidth = rememberTextMeasurer().measure(title, style, maxLines = 1).size.width
+    val color = Ds.colors.labelPrimary
+    SubcomposeLayout(Modifier.fillMaxWidth().heightIn(min = 64.dp).padding(horizontal = 16.dp)) { constraints ->
+        val loose = constraints.copy(minWidth = 0, minHeight = 0)
+        val gap = 12.dp.roundToPx()
+        val trailingItem = subcompose("trailing") { Row { trailing() } }.single().measure(loose)
+        val backItem = if (back == null) null else subcompose("back") {
+            RoundAction(R.drawable.ic_back, stringResource(R.string.back), Modifier.testTag("back"), onClick = back)
+        }.single().measure(loose)
+        // Root titles stay complete at large font sizes; detail titles retain their Back action.
+        val stacked = back == null && naturalTitleWidth + gap + trailingItem.width > constraints.maxWidth
+        val titleWidth = if (stacked) constraints.maxWidth else
+            (constraints.maxWidth - trailingItem.width - gap - (backItem?.let { it.width + gap } ?: 0)).coerceAtLeast(0)
+        val titleItem = subcompose("title") {
+            Text(title, style = style, color = color, maxLines = if (stacked) 2 else 1, overflow = TextOverflow.Ellipsis)
+        }.single().measure(loose.copy(maxWidth = titleWidth))
+        val desiredHeight = if (stacked) titleItem.height + gap + trailingItem.height else
+            maxOf(titleItem.height, trailingItem.height, backItem?.height ?: 0)
+        val height = desiredHeight.coerceIn(constraints.minHeight, constraints.maxHeight)
+        layout(constraints.maxWidth, height) {
+            if (stacked) {
+                titleItem.placeRelative(0, 0)
+                trailingItem.placeRelative(constraints.maxWidth - trailingItem.width, titleItem.height + gap)
+            } else {
+                backItem?.placeRelative(0, (height - backItem.height) / 2)
+                titleItem.placeRelative(backItem?.let { it.width + gap } ?: 0, (height - titleItem.height) / 2)
+                trailingItem.placeRelative(constraints.maxWidth - trailingItem.width, (height - trailingItem.height) / 2)
+            }
+        }
     }
 }
 @Composable fun Segmented(labels: List<String>, icons: List<Int>, selected: Int, onSelect: (Int) -> Unit) {
     Row(Modifier.padding(horizontal = 16.dp, vertical = 12.dp).fillMaxWidth()
         .clip(RoundedCornerShape(24.dp)).background(Ds.colors.backgroundSecondary).padding(4.dp)) {
         labels.forEachIndexed { index, label ->
-            Row(Modifier.weight(1f).clip(RoundedCornerShape(20.dp))
-                .background(if (selected == index) Ds.colors.backgroundPrimary else Color.Transparent)
+            Column(Modifier.weight(1f).clip(RoundedCornerShape(20.dp))
+                .background(if (selected == index) Ds.colors.accentPrimary else Color.Transparent)
                 .selectable(selected == index, role = Role.Tab) { onSelect(index) }
-                .heightIn(min = 44.dp).padding(8.dp), horizontalArrangement = Arrangement.Center,
-                verticalAlignment = Alignment.CenterVertically) {
-                val color = if (selected == index) Ds.colors.accentPrimary else Ds.colors.labelTertiary
-                DsIcon(icons[index], null, color, Modifier.size(16.dp)); Spacer(Modifier.width(6.dp))
-                Text(label, style = Ds.type.headlineEmphasized, color = color)
+                .heightIn(min = 48.dp).padding(8.dp), horizontalAlignment = Alignment.CenterHorizontally,
+                verticalArrangement = Arrangement.spacedBy(4.dp, Alignment.CenterVertically)) {
+                val color = if (selected == index) Ds.colors.labelPrimaryInverted else Ds.colors.labelTertiary
+                DsIcon(icons[index], null, color, Modifier.size(16.dp))
+                Text(label, style = Ds.type.caption2Regular, color = color)
             }
         }
     }

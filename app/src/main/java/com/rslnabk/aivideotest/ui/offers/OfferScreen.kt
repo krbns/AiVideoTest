@@ -90,9 +90,8 @@ import com.rslnabk.aivideotest.ui.theme.Ds
             Text(stringResource(R.string.offer_demo_note), Modifier.fillMaxWidth().padding(vertical = 12.dp),
                 style = Ds.type.caption1Regular, color = Ds.colors.labelTertiary, textAlign = TextAlign.Center)
         }
-        TextButton({ actions.closeOffers() }, Modifier.align(Alignment.TopEnd).padding(8.dp).size(48.dp).testTag("offer_close"), enabled = !busy) {
-            Text(stringResource(R.string.remove_symbol), color = Ds.colors.labelPrimary, style = Ds.type.title1Regular,
-                modifier = Modifier.semantics { contentDescription = close })
+        IconButton({ actions.closeOffers() }, Modifier.align(Alignment.TopEnd).padding(8.dp).size(48.dp).testTag("offer_close"), enabled = !busy) {
+            DsIcon(R.drawable.ic_close, close, Ds.colors.labelPrimary)
         }
     }
 }
