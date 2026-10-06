@@ -20,6 +20,59 @@ class DemoSession(private val store: DemoStore, private val catalog: CatalogRepo
     fun updateDraft(key: String, change: (GenerationDraft) -> GenerationDraft) =
         update(snapshot.copy(drafts = snapshot.drafts + (key to change(draft(key)))))
     fun markInstructionSeen() = update(snapshot.copy(instructionSeen = true))
+    fun advanceIntro(expected: IntroStep): Boolean {
+        if (snapshot.preferences.introStep != expected || expected == IntroStep.DONE || expected == IntroStep.PHOTOS || expected == IntroStep.NOTIFICATIONS) return false
+        preferences { it.copy(introStep = IntroStep.entries[expected.ordinal + 1]) }; return true
+    }
+    fun finishIntroPhoto(choice: IntroPhotoChoice): Boolean {
+        if (snapshot.preferences.introStep != IntroStep.PHOTOS) return false
+        preferences { it.copy(introStep = IntroStep.NOTIFICATIONS, introPhotoChoice = choice) }; return true
+    }
+    fun backIntro() {
+        val step = snapshot.preferences.introStep
+        if (step != IntroStep.WELCOME && step != IntroStep.DONE)
+            preferences { it.copy(introStep = IntroStep.entries[step.ordinal - 1]) }
+    }
+    fun completeIntro(): Boolean {
+        if (snapshot.preferences.introStep == IntroStep.DONE) return false
+        preferences { it.copy(introStep = IntroStep.DONE, introOfferPending = true) }; return true
+    }
+    fun replayIntro() = preferences { it.copy(introStep = IntroStep.WELCOME, introPhotoChoice = IntroPhotoChoice.NONE, introOfferPending = false) }
+    fun markIntroOfferShown() = preferences { it.copy(introOfferPending = false) }
+    fun markNotificationAsked() = preferences { it.copy(notificationAsked = true) }
+    fun setNotifications(enabled: Boolean) = preferences { it.copy(notificationsEnabled = enabled,
+        // Opting in does not announce old history. Only future ready results are claimed.
+        notifiedJobIds = if (enabled) it.notifiedJobIds + snapshot.jobs.filter { job -> job.status == JobStatus.SUCCEEDED }.map { job -> job.id } else it.notifiedJobIds) }
+    fun claimReadyNotifications(): List<GenerationJob> {
+        if (!snapshot.preferences.notificationsEnabled) return emptyList()
+        val ready = snapshot.jobs.filter { it.status == JobStatus.SUCCEEDED && it.id !in snapshot.preferences.notifiedJobIds }
+        if (ready.isNotEmpty()) preferences { it.copy(notifiedJobIds = it.notifiedJobIds + ready.map { job -> job.id }) }
+        return ready
+    }
+    fun editReview(rating: Int? = null, name: String? = null, text: String? = null) = preferences {
+        it.copy(ratingDraft = rating?.coerceIn(0, 5) ?: it.ratingDraft, reviewName = name ?: it.reviewName, reviewText = text ?: it.reviewText)
+    }
+    fun declineRating() = preferences { it.copy(ratingDecision = RatingDecision.DECLINED) }
+    fun saveReview(id: String): Boolean {
+        val p = snapshot.preferences
+        if (p.ratingDraft !in 1..5 || p.reviewName.codePointCount(0, p.reviewName.length) > 80 || p.reviewText.codePointCount(0, p.reviewText.length) > 1000) return false
+        preferences { it.copy(review = DemoReview(id, p.ratingDraft, p.reviewName.trim(), p.reviewText.trim()), ratingDecision = RatingDecision.SAVED,
+            ratingDraft = 0, reviewName = "", reviewText = "") }; return true
+    }
+    fun editMessage(kind: MessageKind, text: String) = preferences {
+        if (kind == MessageKind.REPORT) it.copy(reportDraft = text) else it.copy(letterDraft = text)
+    }
+    fun saveMessage(kind: MessageKind, id: String): Boolean {
+        val p = snapshot.preferences; val text = if (kind == MessageKind.REPORT) p.reportDraft else p.letterDraft
+        if (text.isBlank() || text.codePointCount(0, text.length) > 1000) return false
+        preferences { it.copy(reportDraft = if (kind == MessageKind.REPORT) "" else it.reportDraft,
+            letterDraft = if (kind == MessageKind.LETTER) "" else it.letterDraft,
+            messages = (it.messages + DemoMessage(id, kind, text.trim())).takeLast(20)) }; return true
+    }
+    private fun preferences(change: (DemoPreferences) -> DemoPreferences) {
+        val value = change(snapshot.preferences)
+        if (value != snapshot.preferences) update(snapshot.copy(preferences = value))
+    }
     fun cost(draft: GenerationDraft): Int = draft.effectId?.let { catalog.effect(it)?.tokenCost }
         ?: if (draft.kind == MediaKind.VIDEO && draft.resolution == 1080) 30 else 10
     fun submit(key: String, id: String, now: Long, fail: Boolean = false): SubmitResult = submit(key, id, now, fail, snapshot.commerce)

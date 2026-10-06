@@ -5,6 +5,8 @@ import androidx.compose.ui.test.*
 import androidx.compose.ui.test.junit4.createEmptyComposeRule
 import androidx.test.core.app.ActivityScenario
 import androidx.test.core.app.ApplicationProvider
+import com.rslnabk.aivideotest.data.demo.PreferencesJson
+import com.rslnabk.aivideotest.model.*
 import org.junit.Before
 import org.junit.Rule
 
@@ -27,7 +29,7 @@ abstract class ComposeFlowTest {
         ui.waitForIdle()
     }
     @Before fun resetComposeState() {
-        context.getSharedPreferences("demo_state_v1", Context.MODE_PRIVATE).edit().clear().commit()
+        context.getSharedPreferences("demo_state_v1", Context.MODE_PRIVATE).edit().clear().putString("preferences_v1", PreferencesJson.encode(DemoPreferences(introStep = IntroStep.DONE))).commit()
         context.getSharedPreferences("result_export_v1", Context.MODE_PRIVATE).edit().clear().commit()
     }
 }

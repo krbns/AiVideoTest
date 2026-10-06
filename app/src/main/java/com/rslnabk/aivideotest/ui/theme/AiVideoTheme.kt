@@ -164,7 +164,7 @@ object Ds {
         caption2Italic = style(R.dimen.ds_type_caption2_italic_size, R.dimen.ds_type_caption2_italic_line_height, 400, true),
         caption2EmphasizedItalic = style(R.dimen.ds_type_caption2_emphasized_italic_size, R.dimen.ds_type_caption2_emphasized_italic_line_height, 600, true)
     )
-    CompositionLocalProvider(LocalColors provides colors, LocalType provides type) {
+    CompositionLocalProvider(LocalColors provides colors, LocalType provides type, LocalContentColor provides colors.labelPrimary) {
         MaterialTheme(colorScheme = darkColorScheme(
             primary = colors.accentPrimary, onPrimary = colors.labelPrimaryInverted,
             secondary = colors.accentSecondary, onSecondary = colors.labelPrimaryInverted,

@@ -27,7 +27,7 @@ class PurchaseFlowTest : ComposeFlowTest() {
                 assertEquals(DemoAccount(5, true, SubscriptionPlan.WEEK), it.model.snapshot.value!!.account)
                 it.model.setAccount(DemoAccount(0))
             }
-            tag("restore_settings").performScrollTo().performClick()
+            tag("settings_list").performScrollToKey("restore"); tag("restore_settings").performClick()
             await(scenario) { it.snapshot.value!!.commerce.operation?.phase == PurchasePhase.SUCCEEDED }
             text(R.string.purchase_done).performClick()
             scenario.onActivity { assertEquals(DemoAccount(0, true, SubscriptionPlan.WEEK), it.model.snapshot.value!!.account) }

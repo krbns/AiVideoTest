@@ -23,5 +23,6 @@ data class DemoAccount(val tokens: Int = 5, val isPro: Boolean = false, val plan
 data class DemoSnapshot(
     val favorites: Set<String> = emptySet(), val account: DemoAccount = DemoAccount(),
     val drafts: Map<String, GenerationDraft> = emptyMap(), val jobs: List<GenerationJob> = emptyList(),
-    val instructionSeen: Boolean = false, val commerce: DemoCommerce = DemoCommerce()
+    val instructionSeen: Boolean = false, val commerce: DemoCommerce = DemoCommerce(),
+    val preferences: DemoPreferences = DemoPreferences()
 )

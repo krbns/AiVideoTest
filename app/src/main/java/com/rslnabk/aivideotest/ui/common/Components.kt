@@ -18,12 +18,12 @@ import com.rslnabk.aivideotest.R
 import com.rslnabk.aivideotest.ui.theme.Ds
 
 @Composable fun DsButton(text: String, modifier: Modifier = Modifier, primary: Boolean = false,
-    enabled: Boolean = true, onClick: () -> Unit) {
+    enabled: Boolean = true, containerColor: Color? = null, contentColor: Color? = null, onClick: () -> Unit) {
     val c = Ds.colors
     Button(onClick, modifier.heightIn(min = dimensionResource(if (primary) R.dimen.ds_button_large_min_height else R.dimen.ds_button_medium_min_height)), enabled = enabled,
         shape = RoundedCornerShape(28.dp), border = if (primary) null else BorderStroke(1.dp, c.separatorPrimary),
-        colors = ButtonDefaults.buttonColors(containerColor = if (primary) c.accentPrimary else c.backgroundSecondary,
-            contentColor = if (primary) c.labelPrimaryInverted else c.accentPrimary,
+        colors = ButtonDefaults.buttonColors(containerColor = containerColor ?: if (primary) c.accentPrimary else c.backgroundSecondary,
+            contentColor = contentColor ?: if (primary) c.labelPrimaryInverted else c.accentPrimary,
             disabledContainerColor = c.backgroundSecondary, disabledContentColor = c.labelQuaternary),
         contentPadding = PaddingValues(horizontal = 16.dp, vertical = 12.dp)) {
         Text(text, style = Ds.type.headlineEmphasized, maxLines = 2)

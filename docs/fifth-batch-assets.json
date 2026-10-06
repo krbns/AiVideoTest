@@ -1,0 +1,98 @@
+[
+  {
+    "resource": "demo_intro_welcome",
+    "page": 6,
+    "crop": [
+      0,
+      48,
+      390,
+      648
+    ],
+    "size": [
+      780,
+      1200
+    ],
+    "source": "Illustration crop only; headings and buttons are Compose. Phone chrome is part of the illustrated mockup.",
+    "sha256": "87c3adf15f5dae452d523c688368dcf973313a6344275c866be5ed0d6a9be22a"
+  },
+  {
+    "resource": "demo_intro_prompt",
+    "page": 7,
+    "crop": [
+      0,
+      48,
+      390,
+      648
+    ],
+    "size": [
+      780,
+      1200
+    ],
+    "source": "Illustration crop only; headings and buttons are Compose. Phone chrome is part of the illustrated mockup.",
+    "sha256": "7d7fc061a29d10d817c75449c670c81f8667281b18cf32b9713c326280962774"
+  },
+  {
+    "resource": "demo_intro_share",
+    "page": 8,
+    "crop": [
+      0,
+      48,
+      390,
+      648
+    ],
+    "size": [
+      780,
+      1200
+    ],
+    "source": "Illustration crop only; headings and buttons are Compose. Phone chrome is part of the illustrated mockup.",
+    "sha256": "13887f4004c931ad1d065a4a6ffd259b32fef6fe80dda2f52e2432beafdd0eed"
+  },
+  {
+    "resource": "demo_intro_reviews",
+    "page": 9,
+    "crop": [
+      0,
+      48,
+      390,
+      648
+    ],
+    "size": [
+      780,
+      1200
+    ],
+    "source": "Illustration crop only; headings and buttons are Compose. Phone chrome is part of the illustrated mockup.",
+    "sha256": "63c9ec3fda4269d9a3a5c2e3da5cdafc3296cf2e43c915e319cc51d09b243ce4"
+  },
+  {
+    "resource": "demo_intro_notifications",
+    "page": 11,
+    "crop": [
+      0,
+      48,
+      390,
+      648
+    ],
+    "size": [
+      780,
+      1200
+    ],
+    "source": "Illustration crop only; headings and buttons are Compose. Phone chrome is part of the illustrated mockup.",
+    "sha256": "3f8e8541cd26c0e26ce03607f8faef9bdf1dc821778bbca986a876bb64ab5a3c"
+  },
+  {
+    "resource": "demo_rating_hearts",
+    "page": 25,
+    "crop": [
+      55,
+      233,
+      335,
+      513
+    ],
+    "size": [
+      560,
+      560
+    ],
+    "source": "Illustration crop only; headings and buttons are Compose. Phone chrome is part of the illustrated mockup.",
+    "sha256": "e264da14489a65abe8485c2398512a573fd5810004fd15c3bd4e2fc6f28ca7f1"
+  }
+]

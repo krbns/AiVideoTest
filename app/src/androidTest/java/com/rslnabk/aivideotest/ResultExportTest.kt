@@ -57,7 +57,7 @@ class ResultExportTest : ComposeFlowTest() {
                 assertArrayEquals(bytes,context.contentResolver.openInputStream(uri)!!.use { it.readBytes() })
                 // An exported copy survives removal of the history record.
                 val store=PreferencesDemoStore(context.getSharedPreferences("demo_state_v1",Context.MODE_PRIVATE))
-                store.save(DemoSnapshot(jobs=listOf(job)))
+                store.save(DemoSnapshot(preferences = DemoPreferences(introStep = IntroStep.DONE), jobs=listOf(job)))
                 assertTrue(DemoSession(store,DemoCatalogRepository()).deleteJob(job.id));assertTrue(file.exists())
             } finally { gallery?.let { context.contentResolver.delete(it,null,null) };file.delete() }
         }
@@ -73,7 +73,7 @@ class ResultExportTest : ComposeFlowTest() {
     }
     @Test fun saveErrorRefreshSuccessAndFileChoiceRotationCancellation() {
         val job=job(MediaKind.PHOTO)
-        PreferencesDemoStore(context.getSharedPreferences("demo_state_v1",Context.MODE_PRIVATE)).save(DemoSnapshot(jobs=listOf(job)))
+        PreferencesDemoStore(context.getSharedPreferences("demo_state_v1",Context.MODE_PRIVATE)).save(DemoSnapshot(preferences = DemoPreferences(introStep = IntroStep.DONE), jobs=listOf(job)))
         var exported:Uri?=null
         ActivityScenario.launch(MainActivity::class.java).use { scenario ->
             scenario.onActivity { it.openJob(job.id);ViewModelProvider(it)[AppViewModel::class.java].exports.failNext=true }
@@ -113,7 +113,7 @@ class ResultExportTest : ComposeFlowTest() {
             controller.acknowledge("interrupted");controller.close()
         }
         preferences.edit().putString("operation",operation("CHOOSING").apply { put("destination","FILES") }.toString()).commit()
-        PreferencesDemoStore(context.getSharedPreferences("demo_state_v1",Context.MODE_PRIVATE)).save(DemoSnapshot(jobs=listOf(job)))
+        PreferencesDemoStore(context.getSharedPreferences("demo_state_v1",Context.MODE_PRIVATE)).save(DemoSnapshot(preferences = DemoPreferences(introStep = IntroStep.DONE), jobs=listOf(job)))
         ActivityScenario.launch(MainActivity::class.java).use { scenario ->
             await(scenario) { it.exports.state.value == null }
             scenario.onActivity {

@@ -11,6 +11,7 @@ import androidx.lifecycle.MutableLiveData
 import com.rslnabk.aivideotest.data.CatalogRepository
 import com.rslnabk.aivideotest.data.demo.*
 import com.rslnabk.aivideotest.data.media.ExportController
+import com.rslnabk.aivideotest.data.settings.*
 import com.rslnabk.aivideotest.model.*
 import java.io.File
 import java.util.UUID
@@ -25,13 +26,22 @@ class AppViewModel(application: Application) : AndroidViewModel(application) {
     private val photoOperations = mutableMapOf<String, Int>()
     private val mutableSnapshot = MutableLiveData<DemoSnapshot>()
     val snapshot: LiveData<DemoSnapshot> = mutableSnapshot
+    val notifications = DemoNotifications(application)
+    val notificationsAllowed = MutableLiveData(notifications.allowed())
+    private val cache = PreviewCache(application.cacheDir)
+    val cacheBytes = MutableLiveData(0L)
+    val cacheBusy = MutableLiveData(false)
+    val cacheResult = MutableLiveData<Boolean?>(null)
+    var failNextCache = false
     @Volatile private var disposed = false
     var failNextPhoto = false
     var failNextGeneration = false
     var nextPurchaseOutcome = DemoPurchaseOutcome.SUCCESS
     private val tick = object : Runnable {
         override fun run() {
-            session.reconcile(System.currentTimeMillis()); publish()
+            session.reconcile(System.currentTimeMillis())
+            if (notifications.allowed()) session.claimReadyNotifications().forEach(notifications::ready)
+            publish()
             if (session.snapshot.jobs.any { it.status == JobStatus.RUNNING } || session.snapshot.commerce.operation?.phase == PurchasePhase.LOADING) handler.postDelayed(this, 250)
         }
     }
@@ -48,6 +58,8 @@ class AppViewModel(application: Application) : AndroidViewModel(application) {
         photoOperations.keys.toList().forEach { photoOperations[it] = photoOperations.getValue(it) + 1 }
         handler.removeCallbacks(tick); failNextPhoto = false; failNextGeneration = false
         nextPurchaseOutcome = DemoPurchaseOutcome.SUCCESS
+        failNextCache = false
+        notifications.cancel(); cacheResult.value = null
         session.reset(); publish()
         exports.reset()
     }
@@ -55,6 +67,38 @@ class AppViewModel(application: Application) : AndroidViewModel(application) {
     fun cost(key: String) = session.cost(draft(key))
     fun editDraft(key: String, change: (GenerationDraft) -> GenerationDraft) { session.updateDraft(key, change); publish() }
     fun markInstructionSeen() { session.markInstructionSeen(); publish() }
+    fun advanceIntro(expected: IntroStep) { session.advanceIntro(expected); publish() }
+    fun finishIntroPhoto(choice: IntroPhotoChoice) { session.finishIntroPhoto(choice); publish() }
+    fun backIntro() { session.backIntro(); publish() }
+    fun completeIntro(): Boolean { val changed = session.completeIntro(); publish(); return changed }
+    fun markIntroOfferShown() { session.markIntroOfferShown(); publish() }
+    fun replayIntro() { session.replayIntro(); publish() }
+    fun refreshNotifications() { notificationsAllowed.value = notifications.allowed() }
+    fun markNotificationAsked() { session.markNotificationAsked(); publish() }
+    fun setNotifications(enabled: Boolean) {
+        val previously = session.snapshot.preferences.notificationsEnabled
+        session.setNotifications(enabled); refreshNotifications(); publish()
+        if (!enabled) notifications.cancel()
+        if (enabled && !previously && notifications.allowed()) notifications.preview()
+    }
+    fun editReview(rating: Int? = null, name: String? = null, text: String? = null) { session.editReview(rating, name, text); publish() }
+    fun declineRating() { session.declineRating(); publish() }
+    fun saveReview(): Boolean { val accepted = session.saveReview(UUID.randomUUID().toString()); publish(); return accepted }
+    fun editMessage(kind: MessageKind, text: String) { session.editMessage(kind, text); publish() }
+    fun saveMessage(kind: MessageKind): Boolean { val accepted = session.saveMessage(kind, UUID.randomUUID().toString()); publish(); return accepted }
+    fun refreshCache() {
+        if (cacheBusy.value == true) return
+        worker.execute { val bytes = runCatching(cache::bytes).getOrDefault(0); handler.post { if (!disposed) cacheBytes.value = bytes } }
+    }
+    fun acknowledgeCache() { cacheResult.value = null }
+    fun clearCache() {
+        if (cacheBusy.value == true) return
+        val fail = failNextCache; failNextCache = false; cacheBusy.value = true; cacheResult.value = null
+        worker.execute {
+            val result = runCatching { if (fail) error("Demo cache failure"); cache.clear(); cache.bytes() }
+            handler.post { if (!disposed) { cacheBytes.value = result.getOrDefault(cacheBytes.value ?: 0); cacheBusy.value = false; cacheResult.value = result.isSuccess } }
+        }
+    }
     fun removePhoto(key: String) {
         photoOperations[key] = (photoOperations[key] ?: 0) + 1
         editDraft(key) { it.copy(photo = null, pendingPhoto = null, photoStatus = PhotoStatus.ABSENT) }

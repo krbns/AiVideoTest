@@ -16,7 +16,7 @@ class LibraryFlowTest : ComposeFlowTest() {
         return GenerationJob(id, draft, if (kind == MediaKind.VIDEO) 30 else 10, DemoResultFixtures.image(draft, DemoCatalogRepository()), 0, 0, status = status)
     }
     private fun seed(vararg jobs: GenerationJob) {
-        PreferencesDemoStore(context.getSharedPreferences("demo_state_v1", 0)).save(DemoSnapshot(jobs = jobs.toList(), account = DemoAccount(100)))
+        PreferencesDemoStore(context.getSharedPreferences("demo_state_v1", 0)).save(DemoSnapshot(preferences = DemoPreferences(introStep = IntroStep.DONE), jobs = jobs.toList(), account = DemoAccount(100)))
     }
     @Test fun libraryFiltersResultBackDeleteCancellationRotationAndLastEmpty() {
         seed(job("Photo", MediaKind.PHOTO), job("Video", MediaKind.VIDEO))

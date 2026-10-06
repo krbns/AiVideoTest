@@ -6,6 +6,8 @@ import android.content.Intent
 import android.content.pm.PackageManager
 import android.os.Build
 import android.os.Bundle
+import android.provider.Settings
+import androidx.activity.result.PickVisualMediaRequest
 import android.widget.Toast
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
@@ -27,6 +29,21 @@ class MainActivity : ComponentActivity() {
     val model get() = ViewModelProvider(this)[AppViewModel::class.java]
     private var pendingPhotoKey: String? = null
     private var cameraFile: String? = null
+    private var introPickerPending = false
+    private var notificationPending = false
+    private var notificationForIntro = false
+    private var notificationJob: String? = null
+    private val introPhoto = registerForActivityResult(ActivityResultContracts.PickVisualMedia()) { uri ->
+        introPickerPending = false
+        if (uri != null) model.loadPhoto("prompt_photo", uri.toString())
+        model.finishIntroPhoto(if (uri == null) IntroPhotoChoice.CANCELLED else IntroPhotoChoice.PICKED)
+    }
+    private val notificationPermission = registerForActivityResult(ActivityResultContracts.RequestPermission()) { granted ->
+        notificationPending = false
+        model.setNotifications(granted)
+        val finish = notificationForIntro; notificationForIntro = false
+        if (finish) finishIntro()
+    }
     private val document = registerForActivityResult(ActivityResultContracts.StartActivityForResult()) { result ->
         val job = model.snapshot.value!!.jobs.find { it.id == model.exports.state.value?.jobId }
         model.exports.documentChosen(job, if (result.resultCode == RESULT_OK) result.data?.data else null)
@@ -52,13 +69,69 @@ class MainActivity : ComponentActivity() {
         }
         pendingPhotoKey = savedInstanceState?.getString("pending_photo_key")
         cameraFile = savedInstanceState?.getString("camera_file")
+        introPickerPending = savedInstanceState?.getBoolean("intro_picker") ?: false
+        notificationPending = savedInstanceState?.getBoolean("notification_pending") ?: false
+        notificationForIntro = savedInstanceState?.getBoolean("notification_intro") ?: false
+        notificationJob = savedInstanceState?.getString("notification_job") ?: intent.getStringExtra("notification_job")
+        intent.removeExtra("notification_job")
         if (savedInstanceState == null && model.exports.state.value?.phase == ExportPhase.CHOOSING)
             model.exports.documentChosen(null, null)
         setContent { AiVideoTheme { AiVideoApp(this, model) { navigator = it } } }
     }
     override fun onSaveInstanceState(outState: Bundle) {
         outState.putString("pending_photo_key", pendingPhotoKey); outState.putString("camera_file", cameraFile)
+        outState.putBoolean("intro_picker", introPickerPending)
+        outState.putBoolean("notification_pending", notificationPending)
+        outState.putBoolean("notification_intro", notificationForIntro)
+        outState.putString("notification_job", notificationJob)
         super.onSaveInstanceState(outState)
+    }
+    override fun onResume() { super.onResume(); model.refreshNotifications(); model.refreshCache() }
+    override fun onNewIntent(intent: Intent) {
+        super.onNewIntent(intent)
+        notificationJob = intent.getStringExtra("notification_job")
+        intent.removeExtra("notification_job")
+        if (::navigator.isInitialized) consumeNotification()
+    }
+    fun consumeNotification() {
+        if (!::navigator.isInitialized || model.snapshot.value!!.preferences.introStep != IntroStep.DONE ||
+            navigator.nav.currentDestination?.route in listOf(null, "launch", "intro")) return
+        val id = notificationJob ?: return
+        notificationJob = null
+        model.snapshot.value!!.jobs.find { it.id == id && it.status == JobStatus.SUCCEEDED }?.let(navigator::openJob)
+    }
+    fun finishIntro() { model.completeIntro() }
+    fun pickIntroPhoto() {
+        if (introPickerPending) return
+        introPickerPending = true
+        try { introPhoto.launch(PickVisualMediaRequest(ActivityResultContracts.PickVisualMedia.ImageOnly)) }
+        catch (_: ActivityNotFoundException) { introPickerPending = false; model.finishIntroPhoto(IntroPhotoChoice.CANCELLED); toast(R.string.photo_picker_unavailable) }
+    }
+    fun requestNotifications(fromIntro: Boolean = false) {
+        if (notificationPending) return
+        notificationForIntro = fromIntro
+        if (model.notifications.allowed()) {
+            model.setNotifications(true); notificationForIntro = false
+            if (fromIntro) finishIntro()
+        } else if (Build.VERSION.SDK_INT >= 33 && (!model.snapshot.value!!.preferences.notificationAsked || shouldShowRequestPermissionRationale(Manifest.permission.POST_NOTIFICATIONS))) {
+            model.markNotificationAsked(); notificationPending = true
+            notificationPermission.launch(Manifest.permission.POST_NOTIFICATIONS)
+        } else navigator.show("notification_blocked", value = if (fromIntro) "intro" else "settings")
+    }
+    fun openNotificationSettings() {
+        // Keep the preference separate from the permission managed by Android.
+        model.setNotifications(true)
+        val settingsIntent = if (Build.VERSION.SDK_INT >= 26)
+            Intent(Settings.ACTION_APP_NOTIFICATION_SETTINGS).putExtra(Settings.EXTRA_APP_PACKAGE, packageName)
+        else Intent(Settings.ACTION_APPLICATION_DETAILS_SETTINGS, android.net.Uri.parse("package:$packageName"))
+        try { startActivity(settingsIntent) }
+        catch (_: ActivityNotFoundException) { toast(R.string.android_settings_unavailable) }
+    }
+    fun shareApp() {
+        try { startActivity(Intent.createChooser(Intent(Intent.ACTION_SEND).apply {
+            type = "text/plain"; putExtra(Intent.EXTRA_TEXT, getString(R.string.share_app_text))
+        }, getString(R.string.share_friends))) }
+        catch (_: ActivityNotFoundException) { toast(R.string.export_handler_missing) }
     }
     fun selectTab(tab: AppTab) = navigator.selectTab(tab)
     fun openCategory(kind: MediaKind, category: Category) = navigator.openCategory(kind, category)

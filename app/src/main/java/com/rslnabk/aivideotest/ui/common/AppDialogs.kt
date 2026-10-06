@@ -35,7 +35,20 @@ import com.rslnabk.aivideotest.ui.theme.Ds
     when (actions.dialog) {
         "terms", "privacy" -> InfoDialog(stringResource(if (actions.dialog == "terms") R.string.terms_of_use else R.string.privacy_policy), stringResource(R.string.demo_legal_body), dismiss)
         "reset" -> InfoDialog(stringResource(R.string.debug_reset_title), stringResource(R.string.debug_reset_body), dismiss,
-            stringResource(R.string.reset), { dismiss(); model.reset() }, stringResource(R.string.cancel))
+            stringResource(R.string.reset), { dismiss(); model.reset(); actions.startIntro() }, stringResource(R.string.cancel))
+        "feedback_saved" -> InfoDialog(null, stringResource(R.string.feedback_saved), dismiss)
+        "clear_cache" -> AlertDialog(onDismissRequest = dismiss, containerColor = Ds.colors.backgroundSecondary,
+            title = { Text(stringResource(R.string.clear_cache), style = Ds.type.title2Emphasized) },
+            text = { Text(stringResource(R.string.clear_cache_body), style = Ds.type.calloutRegular) },
+            confirmButton = { TextButton({ dismiss(); model.clearCache() }) { Text(stringResource(R.string.clear_action), color = Ds.colors.accentRed) } },
+            dismissButton = { TextButton(dismiss) { Text(stringResource(R.string.cancel), color = Ds.colors.accentPrimary) } })
+        "notification_blocked" -> {
+            val intro = actions.dialogValue == "intro"
+            InfoDialog(stringResource(R.string.notification_blocked), stringResource(R.string.notification_blocked_body),
+                { dismiss(); if (intro) host.finishIntro() }, stringResource(R.string.open_android_settings), {
+                    dismiss(); host.openNotificationSettings(); if (intro) host.finishIntro()
+                }, stringResource(R.string.not_now))
+        }
         "delete" -> InfoDialog(stringResource(R.string.delete_title), stringResource(R.string.delete_body), dismiss,
             stringResource(R.string.delete_generation), { dismiss(); host.deleteGeneration(key) }, stringResource(R.string.cancel))
         "video_error" -> InfoDialog(null, stringResource(R.string.video_unavailable), dismiss, stringResource(R.string.retry), {
@@ -46,7 +59,7 @@ import com.rslnabk.aivideotest.ui.theme.Ds
             text = {
                 Column(Modifier.verticalScroll(rememberScrollState())) {
                     val options = listOf(R.string.debug_free, R.string.debug_pro, R.string.debug_zero, R.string.debug_reset, R.string.debug_photo_error, R.string.debug_generation_error, R.string.debug_export_error,
-                        R.string.debug_purchase_success, R.string.debug_purchase_cancel, R.string.debug_purchase_error)
+                        R.string.debug_purchase_success, R.string.debug_purchase_cancel, R.string.debug_purchase_error, R.string.debug_intro, R.string.debug_cache_error)
                     options.forEachIndexed { index, resource ->
                         TextButton({
                             dismiss()
@@ -58,6 +71,8 @@ import com.rslnabk.aivideotest.ui.theme.Ds
                                 4 -> { model.failNextPhoto = true; host.toast(R.string.debug_error_ready) }
                                 5 -> { model.failNextGeneration = true; host.toast(R.string.debug_error_ready) }
                                 6 -> { model.exports.failNext = true; host.toast(R.string.debug_error_ready) }
+                                10 -> { model.replayIntro(); actions.startIntro() }
+                                11 -> { model.failNextCache = true; host.toast(R.string.debug_error_ready) }
                                 7, 8, 9 -> { model.nextPurchaseOutcome = DemoPurchaseOutcome.entries[index - 7]; host.toast(R.string.debug_purchase_ready) }
                             }
                         }, Modifier.fillMaxWidth()) { Text(stringResource(resource), color = Ds.colors.accentPrimary) }

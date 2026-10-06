@@ -24,6 +24,8 @@ import com.rslnabk.aivideotest.ui.effect.EffectScreen
 import com.rslnabk.aivideotest.ui.generator.*
 import com.rslnabk.aivideotest.ui.result.ResultScreen
 import com.rslnabk.aivideotest.ui.offers.*
+import com.rslnabk.aivideotest.ui.onboarding.*
+import com.rslnabk.aivideotest.ui.settings.*
 import com.rslnabk.aivideotest.ui.common.*
 import com.rslnabk.aivideotest.ui.theme.Ds
 
@@ -65,6 +67,15 @@ class AppNavigator(val nav: NavHostController) {
         closeOffers()
         nav.navigate("offers/${kind.name}?action=${continuation?.action?.name.orEmpty()}&target=${Uri.encode(continuation?.target.orEmpty())}") { launchSingleTop = true }
     }
+    fun startIntro() {
+        dismiss(); root = AppTab.VIDEO
+        nav.navigate("intro") { popUpTo(nav.graph.id); launchSingleTop = true }
+    }
+    fun finishIntro() {
+        root = AppTab.VIDEO
+        nav.navigate("root/VIDEO") { popUpTo("intro") { inclusive = true }; launchSingleTop = true }
+        openOffers(OfferKind.PRO)
+    }
     fun closeOffers() {
         if (nav.currentDestination?.route?.startsWith("offers/") == true) nav.popBackStack()
     }
@@ -82,6 +93,8 @@ class AppNavigator(val nav: NavHostController) {
     val route = entry?.destination?.route
     val snapshot by model.snapshot.observeAsState(model.snapshot.value!!)
     val export by model.exports.state.observeAsState()
+    val cacheResult by model.cacheResult.observeAsState()
+    val startRoute = remember { if (snapshot.preferences.introStep == IntroStep.DONE) "root/VIDEO" else "launch" }
     val focus = LocalFocusManager.current
     val keyboard = WindowInsets.ime.getBottom(androidx.compose.ui.platform.LocalDensity.current) > 0
     val root = route?.startsWith("root/") == true
@@ -95,10 +108,23 @@ class AppNavigator(val nav: NavHostController) {
         }
         onPauseOrDispose { }
     }
+    LaunchedEffect(route, snapshot.preferences.introStep, snapshot.preferences.introOfferPending) {
+        if (snapshot.preferences.introStep == IntroStep.DONE && snapshot.preferences.introOfferPending && route != null && route != "launch") {
+            actions.finishIntro(); model.markIntroOfferShown()
+        } else host.consumeNotification()
+    }
     Column(Modifier.fillMaxSize().background(Ds.colors.backgroundPrimary).safeDrawingPadding().imePadding()) {
-        NavHost(nav, startDestination = "root/VIDEO", modifier = Modifier.weight(1f)) {
+        NavHost(nav, startDestination = startRoute, modifier = Modifier.weight(1f)) {
+            composable("launch") { LaunchScreen {
+                nav.navigate(if (model.snapshot.value!!.preferences.introStep == IntroStep.DONE) "root/VIDEO" else "intro") { popUpTo("launch") { inclusive = true } }
+            } }
+            composable("intro") { OnboardingScreen(snapshot.preferences, model, host, actions) }
+            composable("rate") { RatingScreen(model, actions) }
+            composable("review") { ReviewScreen(snapshot.preferences, model, actions) }
+            composable("message/{kind}") { MessageScreen(MessageKind.valueOf(it.arguments!!.getString("kind")!!), snapshot.preferences, model, actions) }
             AppTab.entries.forEach { tab -> composable("root/${tab.name}") { backStack ->
-                BrowserScreen(tab, null, null, backStack.savedStateHandle, snapshot, model, host, actions)
+                if (tab == AppTab.SETTINGS) SettingsScreen(snapshot, model, host, actions)
+                else BrowserScreen(tab, null, null, backStack.savedStateHandle, snapshot, model, host, actions)
             } }
             composable("category/{kind}/{category}") { backStack ->
                 BrowserScreen(if (backStack.arguments!!.getString("kind") == "VIDEO") AppTab.VIDEO else AppTab.PHOTO,
@@ -130,6 +156,10 @@ class AppNavigator(val nav: NavHostController) {
             }
         }
     }
+    if (cacheResult != null) InfoDialog(null, stringResource(if (cacheResult == true) R.string.cache_cleared else R.string.cache_failed), model::acknowledgeCache,
+        confirmText = stringResource(if (cacheResult == true) R.string.okay else R.string.retry), confirm = {
+            val retry = cacheResult == false; model.acknowledgeCache(); if (retry) model.clearCache()
+        }, cancelText = if (cacheResult == false) stringResource(R.string.cancel) else null)
     AppDialogs(actions, snapshot, model, host)
     PurchaseStatus(snapshot.commerce.operation, host, model, actions)
     if (export?.phase == ExportPhase.SUCCEEDED || export?.phase == ExportPhase.FAILED) {

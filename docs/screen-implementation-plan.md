@@ -1,6 +1,6 @@
 # AiVideoTest: план экранов и сценариев
 
-Дата: 6 октября 2026. Статус: P1–P5 реализованы в пределах демо: каталоги / навигация, Prompt → фото → Result, Library / Favorites, экспорт / удаление результатов и PRO / Tokens с demo-покупками / restore. Подробности — `first-batch-report.md`, `second-batch-report.md`, `third-batch-report.md`, `fourth-batch-report.md`; следующая порция P6 — онбординг и полные Settings.
+Дата: 6 октября 2026. Статус: P1–P6 реализованы в пределах демо: каталоги / навигация, Prompt → фото → Result, Library / Favorites, экспорт / удаление результатов и PRO / Tokens с demo-покупками / restore, онбординг, разрешения и полные Settings. Подробности — `first-batch-report.md`, `second-batch-report.md`, `third-batch-report.md`, `fourth-batch-report.md`, `fifth-batch-report.md`; следующая порция P7 — общая матрица сценариев и визуальная доводка.
 
 ## Цель первого этапа
 
