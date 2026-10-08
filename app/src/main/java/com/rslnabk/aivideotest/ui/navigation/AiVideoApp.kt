@@ -83,6 +83,13 @@ class AppNavigator(val nav: NavHostController) {
 }
 
 @Composable fun AiVideoApp(host: MainActivity, model: AppViewModel, bind: (AppNavigator) -> Unit) {
+    val source by model.backend.source.observeAsState(com.rslnabk.aivideotest.data.backend.DataSource.DEMO)
+    if (source == com.rslnabk.aivideotest.data.backend.DataSource.SERVER) {
+        com.rslnabk.aivideotest.ui.backend.BackendApp(model)
+    } else DemoAiVideoApp(host, model, bind)
+}
+
+@Composable private fun DemoAiVideoApp(host: MainActivity, model: AppViewModel, bind: (AppNavigator) -> Unit) {
     val nav = rememberNavController()
     val saver = remember(nav) { listSaver<AppNavigator, String>(
         save = { listOf(it.root.name, it.dialog, it.dialogKey, it.dialogValue) },

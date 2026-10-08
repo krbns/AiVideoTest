@@ -1,0 +1,128 @@
+# Сопоставление AiVideoTest и Benvilo API
+
+Дата: 7 октября 2026. Приложение: commit `832a44e`, Android / Jetpack Compose. Источник: [Swagger](https://benvilo.shop/docs#/) и [OpenAPI](https://benvilo.shop/openapi.json), версия API `0.1.0`, OpenAPI `3.1.0`. Снимок: `backend/benvilo-openapi-2026-10-07.json`; SHA-256 `fdebbe076b5fa7bafe1c40cad0caed890754ebfb77027620acf8c54cf35a095d`. Всего 64 пути, 72 операции, 115 схем. Сведения ниже относятся к этому снимку, а не к проверенному поведению сервера.
+
+Основные экраны можно подключить к этому API, сохранив Compose, навигацию и Android-контракты камеры, выбора фото и экспорта. Понадобится заменить локальные каталоги, симуляцию задач и учёт денег на серверные данные. Полная коммерческая версия зависит от уточнения Android-покупок, FCM, идемпотентности генерации и восстановления аккаунта. Демонстрационный режим остаётся самостоятельным источником данных.
+
+Первоначальное сопоставление ниже выполнено по публичной документации и исходникам commit `832a44e`, до изменения кода и авторизации. Примеры Swagger не считались текущим каталогом. После разрешения на интеграцию выполнена порция B1; её результаты и ограничения описаны в [отчёте](backend-first-batch-report.md). Генерация, загрузка личных фото, покупки, webhook и admin-методы по-прежнему не вызывались.
+
+## Выполнено: B1
+
+Добавлены отдельный серверный источник, защищённое хранение сессии и refresh, чтение восьми разделов API, кэш по аккаунту, серверные экраны на Compose и локальное избранное. В debug-сборке вход: Settings → Connect to server; возврат: серверный Settings → Back to demo. Release пока сохраняет прежний демонстрационный вход.
+
+Реальная проверка на Android 14 получила 35 фотоэффектов, 41 видеоэффект, 21 модель, 7 продуктов, баланс 0 и пустую историю нового тестового аккаунта. Все восемь разделов загрузились. Перезапуск восстановил сессию и данные. Проверки B1: 58 device tests и 33 unit tests, без ошибок; debug/release собраны.
+
+B1 использует собственные DTO в `data/backend` и Compose workspace в `ui/backend`. Предложения о полной общей модели ниже остаются планом для B2/B3; demo-модели пока не мигрированы. История и товары доступны для просмотра. Отправка генерации, работа с результатами, оплата и push будут следующими порциями после уточнения контрактов.
+
+## Экраны и серверные контракты
+
+Обозначения S01–S16 соответствуют `demo-coverage.md`. «Есть» означает документированный контракт; «частично» — наличие контракта с расхождением текущего demo; «локально» — сервер не нужен для самого действия; «нет» — соответствующая операция отсутствует в предоставленной схеме.
+
+| Семейство / сценарий | API | Соответствие и необходимые изменения |
+| --- | --- | --- |
+| S01 Splash, запуск | `POST /v1/auth/register`, `/auth/token`, `/auth/refresh` | Есть регистрация по deviceId и JWT. В приложении авторизации пока нет. Начальную загрузку отделить от восстановления onboarding; серверная ошибка не должна сбрасывать пользователя или создавать demo-баланс. |
+| S02 Onboarding / фото | Регистрация; при реальном запуске `POST /v1/media/uploads` | Шаги и sample-фото локальные. Не загружать выбранное фото только из-за просмотра onboarding. Предпочтение уведомлений можно синхронизировать, Android push пока отсутствует. |
+| S03 Rating / Review | Нет метода приёма отзыва | Сейчас отзыв сохраняется локально. Для отправки нужен отдельный контракт или согласованный Android-переход к оценке приложения. `PATCH /profile` обновляет имя, но не сохраняет отзыв. |
+| S04 PRO, restore, продолжение генерации | `GET /v1/tokens/products`, `GET /v1/policy/effective`; `/subscription/sync`; Adapty webhook; CloudPayments checkout/cancel | Частично. Каталог и состояние есть, receipt sync требует Apple StoreKit. Нет документированного клиентского Google Play purchase/restore-контракта. Продолжение возможно после подтверждения серверных прав, не после одного закрытия окна оплаты. |
+| S05 Tokens / недостаток баланса | `/tokens/products`, `/wallet`, `/policy/effective`; `/tokens/purchase`; CloudPayments checkout | Частично. Покупка токенов через receipt API требует активной подписки и Apple-транзакции. Demo сейчас разрешает Free и фиксированные четыре пакета; это не правило сервера. |
+| S06 Trends / баннер / секции | `GET /v1/media/templates/images`, `/templates/videos` | Есть каталог шаблонов, `title`, `titles`, `categories`, `isNew`, `isTrending`, `order`, обложки и стоимость. Нет отдельного Home/banner-контракта и словаря названий категорий. Старые resource-ID и статичные разделы требуют отображения динамических данных. |
+| S07 Категория / See all | Те же template-методы с `category` | Частично. Категория — произвольный серверный код; неизвестный код возвращает пустую выдачу. Popular/Anime/Fashion/New/Retro нельзя автоматически считать совпадающими с серверными кодами. |
+| S08 Photo Prompt | `/media/models`; `POST /media/images`; при фото `/media/uploads` | Есть textToImage и imageToImage. Требуется выбранная модель и допустимые настройки. Отдельного поля `style` и каталога пяти текущих стилей нет; их mapping нужно согласовать. |
+| S08 Video Prompt | `/media/models`; `POST /media/videos`; при фото `/media/uploads` | Есть textToVideo и imageToVideo. `720`/`1080` в demo заменяются поддерживаемыми значениями режима вроде `720p`/`1080p`; длительность, звук и прочие defaults влияют на цену. |
+| S09 Effect / Use this effect | Template-каталог → `POST /media/images` или `/media/videos` с `templateId` | Есть серверные шаблоны. Не передавать старый `video_gold`/`photo_gold` как реальный templateId. Промпт шаблона не публикуется; пустые model/prompt/params сервер подставляет сам. Присланные значения обязаны соответствовать шаблону. |
+| S10 Instruction | Поля template `requiredInputImages`, `steps`, `pipeline` | Основные объяснения локальные; количество фото и шаги должны соответствовать выбранной плитке. Pipeline `image_video` исполняет сервер; Android не должен отдельно оплачивать и запускать промежуточную image-задачу. |
+| S11 Camera / Gallery / reference / retry | `POST /v1/media/uploads` → URL | Выбор и нормализация локальные, реальная загрузка серверная. Фото: JSON base64, JPEG/PNG/WebP/GIF, документированный лимит 10 МБ. Один reference в demo недостаточен для некоторых template; число берётся из контракта. |
+| S12 Creating / Failed / Retry | `GET /v1/media/jobs/{job_id}`, `POST .../{job_id}/cancel`; повтор `POST /media/images` или `/videos` | Есть асинхронные статусы и отмена. Таймер 4 секунды и локальный refund заменяются серверными состояниями. Retry не имеет отдельного метода и создаёт новую job; повтор существующего demo-ID недопустим. Идемпотентность POST генерации не описана. |
+| S13 Result / playback / Save / Share / Delete | `assets[]` из job; `GET /v1/media/results/{token}`; `DELETE /media/jobs/{job_id}` | Есть URL, MIME, имя, thumbnail и срок результата. Нужно скачивать реальные байты и воспроизводить URL/локальную копию. Системные Gallery/Files/Share переиспользуются. Удаление серверной job делает её серверную ссылку недоступной; ранее экспортированные копии остаются. |
+| S14 Favorites | Нет методов избранного | Можно оставить избранные templateId локально, с привязкой к аккаунту. Синхронизации между устройствами и серверного восстановления нет; для них нужен контракт. Если шаблон исчез, сохранённый ID не должен ломать экран. |
+| S15 Library / Photos / Videos | `GET /v1/media/jobs?kind=image|video&limit=...&cursor=...` | Есть серверная история и пагинация. Объединять страницы по jobId, сохранять фильтр при курсоре. Список отдаёт последнее известное состояние; активные job нужно отдельно опрашивать по ID. |
+| S16 Account / subscription card | `/profile`, `/wallet`, `/policy/effective`, `/tokens/products` | Есть профиль, баланс, plan, expiry, willRenew и права. В демо профиль отсутствует, PRO — boolean, порог Low tokens фиксирован `<10`; production UI должен использовать серверные права и стоимость выбранного действия. |
+| S16 Notifications | `GET/PATCH /v1/preferences`; `POST/DELETE /v1/notifications/device-token` | Предпочтение есть. DeviceTokenRegisterRequest допускает только `platform="ios"` и APNs-токен. Нужен Android/FCM-контракт. Локальное разрешение Android и серверное предпочтение остаются разными состояниями. |
+| S16 Restore / cache / share app / version | Restore зависит от платёжного канала; остальные локальные | Cache и версия сохраняют текущую Android-реализацию; cache не удаляет загруженные originals или сохранённые результаты. Restore не является синхронизацией demo-receipts с Apple endpoint. |
+| S16 Letter / Report / Legal | Нет support/report/letter/terms/privacy-методов или URL | Локальные demo-формы нельзя выдавать за отправленные сообщения. Нужны способ доставки, подтверждение принятия и настоящие юридические ссылки. |
+
+За пределами текущего PDF есть дополнительные возможности API: audio/TTS/music, Enhance, remove background, Motion Control, Lip Sync и цепочки редактирования через sourceJobId. Они не требуют добавления новых экранов в текущую интеграцию. Admin и webhook — серверные операции; мобильное приложение не вызывает их и не хранит их секреты.
+
+## Четыре основных запуска
+
+| Текущий путь | Серверный запрос | Что сохраняется для восстановления |
+| --- | --- | --- |
+| Photo Prompt, без фото | `POST /v1/media/images` с model, textToImage, prompt и поддерживаемыми параметрами | Исходный prompt, выбранные model/mode/params, operation ID, полученный jobId |
+| Photo Prompt, с фото | Загрузка JPEG → `POST /media/images` с imageUrls и imageToImage | Локальный original, URL и expiresAt загрузки, immutable request, jobId |
+| Video Prompt | Без фото — textToVideo; с загруженным imageUrl — imageToVideo, через `POST /media/videos` | Model/mode, resolution/duration/audio и прочие defaults, original при наличии, jobId |
+| Photo/Video Effect | Загрузка требуемых фото → соответствующий POST с templateId и нужными imageUrls/imageUrl | Template ID, требуемые входы, снимок запроса и jobId; для image_video одна клиентская video-задача |
+
+Это отображение полей, не утверждённый выбор конкретной AI-модели. Модель по умолчанию и соответствие пяти PhotoStyle нужно согласовать по действующему каталогу. Нельзя подставлять придуманный prompt для скрытого шаблона или посылать style как недокументированное поле.
+
+## Правила, которые меняются относительно demo
+
+1. **Сервер владеет балансом.** Генерация сама списывает кредиты, failed/canceled возвращает их на сервере. Не вызывать дополнительно `/wallet/consume` и не прибавлять refund локально. UI обновляет policy/wallet после принятых и терминальных операций; оптимистическая оценка не подменяет подтверждённый баланс.
+2. **Цена не фиксирована.** В demo Prompt стоит 10, Video 1080 — 30, Effect — 20/40. В API шаблон стоит template.tokens; image — resolutionCredits выбранного качества; video — ceil(credits × ceil(duration/baseDurationSeconds) × resolutionMultiplier × audioMultiplier при звуке). Считать по режиму и его defaults, а не по примерам Swagger. Итог — creditsCharged. Нужен ответ про изменение тарифа между просмотром и POST: quote/version или допустимая политика подтверждения новой цены.
+3. **Подписка и trial входят в права.** isSubscribed, subscriptionExpiresAt, plan, willRenew, trialRemaining, canGenerateCreditsMode и reasons используются вместе. Наличие кредитов само по себе не означает разрешение запуска. Unlimited PRO из PDF не подтверждается этим API: продукт описывает кредиты периода. byok-поля обозначены как наследие и не создают отдельный пользовательский режим.
+4. **Входы зависят от модели/шаблона.** Template requiredInputImages описывает число пользовательских фото; referenceImageUrls — фиксированные серверные референсы. Для image_video шаг 2 не требует повторного выбора фото и запускается сервером. Одношаговые запросы дополнительно ограничены maxInputImages/requiredParams модели. Пока UI хранит один photo, он не обслуживает шаблоны, которым нужно больше одного.
+5. **Prompt 300 — продуктовый лимит.** API принимает prompt до 10 000 символов; текущие 300 Unicode code points можно сохранить до решения продукта, но это не ограничение сервера. Нет контрактного соответствия GHIBLI/PERSON_3D/SIMPSONS/FANTASY. Разрешения и режимы нельзя определять только по наличию кнопок старого PDF.
+6. **Job живёт дольше Activity.** queued/running → RUNNING в существующей UI-модели, completed → SUCCEEDED, failed → FAILED с errorCode. Сохранять исходный серверный статус и снимок запроса. progress 0/0.5/1 не даёт точного ETA. Потеря сети — состояние синхронизации, а не failed и не повод возвращать деньги. После cold start восстанавливать jobId и читать сервер; readyAt/willFail локальны только в demo.
+7. **Library GET не продвигает активные задачи.** Нужен ограниченный polling конкретных ID с паузами/backoff и обработкой 429. Без FCM завершение при закрытом процессе обнаружится при следующей синхронизации; своевременные фоновые уведомления пока не обещаются. Частота polling и серверный процесс финализации/refund требуют уточнения.
+8. **Retry создаёт новую серверную запись.** Нет `/retry`, а sourceJobId предназначен для работы с completed image, не для повторения failed. Локальный operation ID отличать от server jobId. Хранить immutable параметры попытки и связь с предыдущей; решать, показывать ли отдельные попытки или объединять в UI. Старые upload URL могут истечь — при наличии original перезагрузить его. Для шаблона актуальность прежнего тарифа/параметров повторно проверить.
+9. **Результат может истечь.** assets.url имеет expiresAt; null не гарантирует вечное хранение, поскольку возможна ссылка поставщика. Серверная выдача поддерживает 206/Range; 410 означает истечение, 404 — отсутствие/удаление. Не считать, что GET job автоматически продлевает URL: этого контракта нет. Локальная сохранённая копия остаётся доступной; новая генерация не запускается автоматически ради открытия старого Result.
+10. **Формат результата приходит с сервера.** JPEG/PNG/WebP/GIF и MP4/QuickTime/WebM нельзя свести к нынешним всегда image/jpeg и video/mp4 без реального преобразования. У assets contentType/fileName/thumbnailUrl могут быть null; согласовать fallback по фактическим HTTP-заголовкам/байтам. Export сохраняет именно показанный asset, с правильным MIME и расширением. Ошибка скачивания отличается от ошибки генерации.
+
+## Пробелы и вопросы к владельцу бэкенда
+
+| Приоритет | Что подтверждено схемой | Требуемое уточнение |
+| --- | --- | --- |
+| До реальных запусков | POST images/videos не имеет requestId/Idempotency-Key; идемпотентен только отдельный wallet.consume и ряд начислений/refund | Добавить контракт идемпотентности генерации: ключ, срок хранения, совпадение payload, конфликт, поиск принятой job по ключу. При timeout после списания нельзя безопасно автоматически повторить POST. |
+| До платёжного подключения | subscription.sync и tokens.purchase принимают подписанную StoreKit transaction; есть Adapty webhook и CloudPayments checkout | Какой канал для Android выбран? Для Google Play/Adapty: продукты, связь SDK-профиля с нашим userId, verified purchase/restore, grants, задержки и resync. Для CloudPayments: настройка инстанса, email UI, return/deep link и контракт проверки paymentId; отдельного публичного payment-status GET в схеме нет. |
+| До Android push | platform ограничен ios, доставка APNs | Нужны android/FCM, регистрация/ротация/удаление токена, формат job.completed/job.failed, jobId и идемпотентность доставки. |
+| До коммерческого аккаунта | DeviceId позволяет register/token; социальный вход — только Apple | Как доказывается владение устройством при выдаче токенов и привязывается аккаунт? Как восстановить покупки/историю после переустановки и на другом Android? Документировать Google/другой login либо явно принять аккаунт установки. DeviceId нельзя считать самостоятельным доказательством владения. |
+| До Photo Styles / Trends | Есть произвольные categories и template IDs, но нет словаря категорий, поля style или banner API | Дать действующие коды Popular/Anime/Fashion/New/Retro, mapping пяти стилей, модель по умолчанию, контент баннера и fallback для снятых с публикации шаблонов. Поля isNew/isTrending не доказывают mapping всех разделов. |
+| До показа окончательной цены | Есть pricing в model и template.tokens, но нет quote/version | Подтвердить формулы/округление, гранты недели/года, смысл trial, правила subscription_required и поведение при изменении цены перед submit. Не переносить PDF-цены в коммерческие SKU. |
+| Контрактная несогласованность | В info.description упомянут `HTTP 200 {status: blocked, blockReason}`, но в MediaJobResponse status enum только queued/running/completed/failed; соответствующей схемы blocked нет | На каких методах это реально возвращается? Добавить точный статус и response schema/oneOf либо исправить общее описание. Сейчас generated DTO не может надёжно разобрать такой ответ. |
+| Контрактная несогласованность | Общее описание говорит, что все /v1 защищены JWT, но auth и публичные обложки/results имеют исключения; 422 часть методов описывает ErrorResponse, часть HTTPValidationError.detail | Придерживаться operation.security и поддержать оба формата ошибок. Уточнить media POST 4xx/5xx, гарантию отсутствия списания при rejection и неопределённый исход timeout/502. |
+| Работа незавершённых job | Документация DELETE связывает refund с опросом, GET списка не вызывает провайдера; есть proxy webhook | Есть ли серверная фоновая финализация, если клиент больше не опрашивает job? Когда гарантируется возврат и какой polling/rate-limit/retry интервал допустим? |
+| Favorites / сообщения / legal | Соответствующих клиентских методов нет | Локальные favorites достаточны или нужна синхронизация? Нужны support/report/review-контракт и реальные Terms/Privacy URL. |
+| Хранение медиа | Есть expiresAt и 404/410, но нет API обновления ссылки или срока хранения job | Уточнить retention результатов/истории/uploads, можно ли получить новый URL без новой генерации, MIME fallback и лимит фото в точных байтах (документация пишет 10 МБ). |
+
+Вопросы не означают, что весь проект нужно остановить. Авторизация как контракт, чтение каталога, policy/wallet, новая модель состояния и downloader могут разрабатываться независимо. Реальные покупки и гарантированный повтор платной генерации зависят от ответов выше.
+
+## Изменения в текущей архитектуре
+
+| Файл / зона | Предлагаемое изменение |
+| --- | --- |
+| `AppViewModel.kt` | Сейчас напрямую создаёт DemoCatalogRepository/DemoSession и тикает каждые 250ms. Ввести выбранный источник данных через фабрику/зависимости; demo и remote реализуют согласованные операции. ViewModel координирует UI, сетевую синхронизацию и восстановление, не начисляет реальные кредиты. |
+| `data/CatalogRepository.kt` | Сохранить repository boundary; добавить refresh/load/error и чтение кэшированного каталога. Синхронный List не должен выполнять сеть на UI-потоке. |
+| `model/Catalog.kt` | Resource-only Effect расширить названием из API, серверным ID, обложками/preview/poster, categories, моделью, требуемыми входами и стоимостью. Demo-resource и remote URL описываются разными MediaSource; не помещать URL в Int drawable. Account получает серверные policy/profile поля. |
+| `model/Generation.kt` | Draft: model/mode/templateId, параметры и список reference, upload state/expiry. Job: server ID, actual params/status/errorCode, assets[], timestamps и charged/refunded. Операция отправки/синхронизации отдельно от результата job. |
+| `model/Purchase.kt` | Отделить DemoProduct/DemoReceipt от настоящего SKU/productId и состояния подтверждения сервером. PDF-цены и 100 токенов не мигрировать в коммерческий каталог. |
+| `data/demo/*` | Сохранить локальные fixtures, deterministic сценарии и существующие тесты. Новый сетевой режим не пользуется demo-reconcile/refund и не подмешивает demo-history/баланс. |
+| `data/network/*`, хранилище сессии и операции | Новый HTTPS-клиент, DTO/мапперы, bearer, атомарная запись пары токенов, единый refresh для параллельных запросов, нормализация ошибок и локальный журнал операций. Refresh одноразовый: не запускать несколько обменов с одной парой и не повторять старый refresh после потери ответа без согласованного recovery. |
+| `data/media/ResultMedia.kt`, ExportController | Downloader/cache серверных assets вместо DemoResultFixtures. Переиспользовать документ/галерею/chooser, grant, отмену и журнал экспорта. Срок ссылок, загрузка, MIME, повторы скачивания и pending rollback покрываются отдельно. |
+| `BrowserScreen`, EffectScreen, PromptEditor, ResultScreen | Использовать общие доменные модели и состояния загрузки/ошибки/empty/offline. Поддержать удалённые названия/обложки, несколько фото и реально допустимые параметры без переписывания Compose-навигации. Не показывать успешный результат или баланс из фикстуры при ошибке сервера. |
+| `MainActivity`, Settings и notifications | Сохранить Android Activity Results и permissions; добавить production deeplink/job bootstrap, серверный preference и позднее FCM. Onboarding/drafts/первое Instruction могут оставаться локальными. |
+| `AndroidManifest.xml`, backup rules | В manifest сейчас нет INTERNET. Добавить при сетевой интеграции. Для нового auth storage задать защиту и исключения backup/device transfer: действующие XML — шаблоны без исключений. JWT/refresh не помещать в demo store; не логировать bearer или результатные URL с access-token в пути. |
+
+Разделение — предлагаемый план, а не уже выполненная миграция. Существующий один модуль app, Compose-тема и навигация сохраняются. Установка remote-режима явная; сетевой сбой не переключает пользователя в demo. История, favorites и credentials изолируются по аккаунту/режиму. Выбор конкретных сетевых/платёжных SDK делается в реализации после проверки Android-контрактов.
+
+## Порции интеграции
+
+| Порция | Работа | Проверяемый результат / зависимость |
+| --- | --- | --- |
+| B1 — сессия и чтение | Network boundary, device auth/refresh/storage, загрузка templates/models/profile/wallet/policy, cache и ошибки; явные demo/remote sources | Каталоги и баланс приходят с сервера, cold start восстанавливает сессию, UI не зависает и не выдаёт фикстуры за сервер. Платные действия пока не входят в результат этой порции. Нужны тестовый инстанс и подтверждённый жизненный цикл аккаунта. |
+| B2 — Photo Prompt и результаты | Нормализация JPEG/upload, textToImage/imageToImage, job polling, Library pagination, downloader, Photo Result и экспорт | Один реальный запуск → одна server job → результат и сохранение, переживает recreate/перезапуск/потерю сети. До использования реальных кредитов решить идемпотентность/тестовый кошелёк и модель по умолчанию. |
+| B3 — Video и Effects | Text/image-to-video; templateId, требуемые фото и image_video, preview/poster, playback, cancel/delete, retry как новая попытка | Все четыре текущих пути работают с реальными медиа и серверной историей; неизвестные модели/шаблоны и expired URL обработаны явно. Styles/categories согласованы. |
+| B4 — коммерция и уведомления | Выбранный Android-платёжный канал, продукты/локализованные цены, restore, server grants, continuation; preferences/FCM | Покупка не начисляет локально, повтор callback не дублирует результат, изменение прав приходит с сервера. Зависит от Android billing/FCM-контрактов; можно разделить на две независимые порции. |
+| B5 — финальная проверка | Cross-tab state, process death, offline/refresh/timeout/duplicates, MediaStore/SAF, фоновые ограничения, old Android/телефон | Матрица demo остаётся зелёной, отдельные remote contract/integration tests и native прогоны подтверждают реальный режим. Support/legal включаются после предоставления контрактов/URL. |
+
+Первой разумно брать B1: это подключение чтения данных и сессии с минимальными изменениями экранов. B2/B3 дают настоящую генерацию, но запускать их на платном окружении без ответа об идемпотентности не следует. B4 не заменяется клиентским вызовом webhook.
+
+## Проверка будущей интеграции
+
+- Contract fixtures из снимка: обязательные/nullable поля, неизвестные enum/error codes, дефолты и supported params, два формата 422, ISO timestamps, пустые/частичные assets и MIME.
+- Auth: один refresh при нескольких 401, ротация и atomic persist, потерянный ответ refresh, cold start, отдельные аккаунты и запрет подмены userId.
+- Submit: быстрый двойной tap, сеть оборвалась до/после принятия, повтор ключа с тем же/другим payload, restart с pending operation; нет двойного списания и локального refund.
+- Jobs: queued/running/completed/failed/canceled, transient 502/429, active polling отдельно от Library GET, pagination с тем же kind, новая попытка retry, изменённый template и истёкший upload.
+- Media: HTTP 206/404/410, реальный MIME и байты, отмена/частичный download, локальный cache, недоступный codec, playback pause/background/recreate и экспорт именно выбранного результата.
+- Purchases: buy/cancel/error/pending/restore, duplicated server event, асинхронный grant, expired подписка и willRenew=false; выбранный канал проверяется его реальным контрактом.
+- Android: OS notification permission и server toggle отдельно, FCM token rotation при появлении контракта; SDK API 24–28/34/36/37 и физическое устройство по согласованной тестовой матрице.
+
+До B1 прошли 46 device tests на каждом API 34/36 и 33 unit tests для demo. В B1 прошли 58 device tests на API 34 (46 прежних и 12 новых) и 33 unit tests; это не подтверждает будущую генерацию или покупки. Структура OpenAPI и локальные ссылки проверены. Доступные данные проверены на реальном сервере; платные операции не вызывались. API 36 для B1 повторно не проверялся.

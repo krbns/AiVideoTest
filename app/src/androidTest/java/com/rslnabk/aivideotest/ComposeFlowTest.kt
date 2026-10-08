@@ -29,6 +29,7 @@ abstract class ComposeFlowTest {
         ui.waitForIdle()
     }
     @Before fun resetComposeState() {
+        context.getSharedPreferences("backend_source_v1", Context.MODE_PRIVATE).edit().clear().commit()
         context.getSharedPreferences("demo_state_v1", Context.MODE_PRIVATE).edit().clear().putString("preferences_v1", PreferencesJson.encode(DemoPreferences(introStep = IntroStep.DONE))).commit()
         context.getSharedPreferences("result_export_v1", Context.MODE_PRIVATE).edit().clear().commit()
     }

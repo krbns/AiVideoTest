@@ -29,6 +29,9 @@ import com.rslnabk.aivideotest.ui.theme.Ds
     Column(Modifier.fillMaxSize()) {
         ScreenHeader(stringResource(R.string.settings)) { BalanceButton(snapshot, actions) }
         LazyColumn(Modifier.fillMaxSize().testTag("settings_list"), contentPadding = PaddingValues(16.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
+            if (BuildConfig.DEBUG) item("backend_connection") {
+                SettingsRow(R.string.backend_connect, R.drawable.ic_clock, "backend_connect") { model.backend.connect() }
+            }
             item("subscription") {
                 val low = snapshot.account.subscriptionCard == SubscriptionCard.LOW_BALANCE
                 val color = if (low) Ds.colors.accentRed else Ds.colors.accentPrimary

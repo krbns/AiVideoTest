@@ -18,6 +18,7 @@ import java.util.UUID
 import java.util.concurrent.Executors
 
 class AppViewModel(application: Application) : AndroidViewModel(application) {
+    val backend = com.rslnabk.aivideotest.data.backend.BackendController(application)
     val catalog: CatalogRepository = DemoCatalogRepository()
     val exports = ExportController(application)
     private val session = DemoSession(PreferencesDemoStore(application.getSharedPreferences("demo_state_v1", Context.MODE_PRIVATE)), catalog)
@@ -40,7 +41,7 @@ class AppViewModel(application: Application) : AndroidViewModel(application) {
     private val tick = object : Runnable {
         override fun run() {
             session.reconcile(System.currentTimeMillis())
-            if (notifications.allowed()) session.claimReadyNotifications().forEach(notifications::ready)
+            if (backend.source.value == com.rslnabk.aivideotest.data.backend.DataSource.DEMO && notifications.allowed()) session.claimReadyNotifications().forEach(notifications::ready)
             publish()
             if (session.snapshot.jobs.any { it.status == JobStatus.RUNNING } || session.snapshot.commerce.operation?.phase == PurchasePhase.LOADING) handler.postDelayed(this, 250)
         }
@@ -167,5 +168,5 @@ class AppViewModel(application: Application) : AndroidViewModel(application) {
         if (result is SubmitResult.Accepted) { failNextGeneration = false; schedulePurchase() } else publish()
         return result
     }
-    override fun onCleared() { disposed = true; exports.close(); handler.removeCallbacksAndMessages(null); worker.shutdownNow(); super.onCleared() }
+    override fun onCleared() { disposed = true; backend.close(); exports.close(); handler.removeCallbacksAndMessages(null); worker.shutdownNow(); super.onCleared() }
 }

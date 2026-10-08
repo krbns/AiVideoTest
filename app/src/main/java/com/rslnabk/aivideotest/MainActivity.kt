@@ -94,6 +94,7 @@ class MainActivity : ComponentActivity() {
         if (::navigator.isInitialized) consumeNotification()
     }
     fun consumeNotification() {
+        if (model.backend.source.value != com.rslnabk.aivideotest.data.backend.DataSource.DEMO) return
         if (!::navigator.isInitialized || model.snapshot.value!!.preferences.introStep != IntroStep.DONE ||
             navigator.nav.currentDestination?.route in listOf(null, "launch", "intro")) return
         val id = notificationJob ?: return
