@@ -21,6 +21,7 @@ import androidx.compose.ui.unit.dp
 import androidx.navigation.NavHostController
 import androidx.navigation.compose.*
 import com.rslnabk.aivideotest.AppViewModel
+import com.rslnabk.aivideotest.MainActivity
 import com.rslnabk.aivideotest.R
 import com.rslnabk.aivideotest.data.backend.*
 import com.rslnabk.aivideotest.model.AppTab
@@ -28,32 +29,54 @@ import com.rslnabk.aivideotest.ui.common.*
 import com.rslnabk.aivideotest.ui.navigation.AppTabBar
 import com.rslnabk.aivideotest.ui.theme.Ds
 
-@Composable fun BackendApp(model: AppViewModel) {
+@Composable fun BackendApp(model: AppViewModel, host: MainActivity) {
     val state by model.backend.state.observeAsState(BackendState())
+    val photo by model.backendPhotos.state.observeAsState(PhotoState())
+    DisposableEffect(state.userId) {
+        model.backendPhotos.activate(state.userId)
+        onDispose { model.backendPhotos.pause() }
+    }
     BackendWorkspace(state, { model.backend.connect(it) }, model.backend::useDemo,
-        model.backend::toggleFavorite, model.backend::loadMore)
+        model.backend::toggleFavorite, model.backend::loadMore,
+        photoEditor = { RemotePhotoEditor(state, photo, model.backendPhotos, host, { model.backend.connect(true) }) },
+        photoResult = { RemotePhotoResult(photo, model.backendPhotos, model.backendExports, host) },
+        photoJob = model.backendPhotos::openJob, submissionJobId = photo.submissionJobId, unknownPhoto = photo.phase == PhotoPhase.UNKNOWN)
 }
 /** Same five destinations and design tokens; phase B1 has no mutation or purchase actions. */
 @Composable fun BackendWorkspace(state: BackendState, refresh: (Boolean) -> Unit, demo: () -> Unit,
-    favorite: (String) -> Unit, loadMore: () -> Unit) {
+    favorite: (String) -> Unit, loadMore: () -> Unit,
+    photoEditor: (@Composable () -> Unit)? = null, photoResult: (@Composable () -> Unit)? = null,
+    photoJob: (RemoteJob) -> Unit = {}, submissionJobId: String? = null, unknownPhoto: Boolean = false) {
     val nav = rememberNavController()
     val entry by nav.currentBackStackEntryAsState()
-    val detail = entry?.destination?.route == "backend/effect/{kind}/{id}"
+    val detail = entry?.destination?.route in listOf("backend/effect/{kind}/{id}", "backend/photo-job")
     val tab = AppTab.entries.find { entry?.destination?.route == "backend/" + it.name } ?: AppTab.VIDEO
     fun select(next: AppTab) = nav.navigate("backend/" + next.name) {
         popUpTo("backend/VIDEO") { saveState = true }; launchSingleTop = true; restoreState = true
     }
     BackHandler(!detail && tab != AppTab.VIDEO) { select(AppTab.VIDEO) }
+    LaunchedEffect(submissionJobId) {
+        if (submissionJobId != null) nav.navigate("backend/photo-job") { launchSingleTop = true }
+    }
+    LaunchedEffect(unknownPhoto) { if (unknownPhoto) select(AppTab.PHOTO) }
     Column(Modifier.fillMaxSize().background(Ds.colors.backgroundPrimary).safeDrawingPadding()) {
         NavHost(nav, "backend/VIDEO", Modifier.weight(1f)) {
             AppTab.entries.forEach { current -> composable("backend/" + current.name) {
                 Column(Modifier.fillMaxSize()) {
                     ScreenHeader(stringResource(current.title)) { RemoteBalance(state) }
-                    BackendBody(current, state, refresh, demo, favorite, loadMore) { kind, id ->
+                    BackendBody(current, state, refresh, demo, favorite, loadMore, photoEditor, unknownPhoto, { job ->
+                        photoJob(job); nav.navigate("backend/photo-job") { launchSingleTop = true }
+                    }) { kind, id ->
                         nav.navigate("backend/effect/" + kind + "/" + Uri.encode(id))
                     }
                 }
             } }
+            composable("backend/photo-job") {
+                Column(Modifier.fillMaxSize()) {
+                    ScreenHeader(stringResource(R.string.photo_result), { nav.popBackStack() }) { RemoteBalance(state) }
+                    photoResult?.invoke()
+                }
+            }
             composable("backend/effect/{kind}/{id}") { stack ->
                 val kind = stack.arguments!!.getString("kind")!!
                 val templates = if (kind == "image") state.data.photos else state.data.videos
@@ -76,8 +99,11 @@ import com.rslnabk.aivideotest.ui.theme.Ds
     }
 }
 @Composable private fun BackendBody(tab: AppTab, state: BackendState, refresh: (Boolean) -> Unit,
-    demo: () -> Unit, favorite: (String) -> Unit, loadMore: () -> Unit, effect: (String, String) -> Unit) {
-    var mode by rememberSaveable(tab) { mutableIntStateOf(0) }
+    demo: () -> Unit, favorite: (String) -> Unit, loadMore: () -> Unit,
+    photoEditor: (@Composable () -> Unit)?, unknownPhoto: Boolean, photoJob: (RemoteJob) -> Unit,
+    effect: (String, String) -> Unit) {
+    var mode by rememberSaveable(tab) { mutableIntStateOf(if (tab == AppTab.PHOTO && unknownPhoto) 1 else 0) }
+    LaunchedEffect(unknownPhoto) { if (tab == AppTab.PHOTO && unknownPhoto) mode = 1 }
     var filter by rememberSaveable(tab) { mutableIntStateOf(0) }
     val kind = if (tab == AppTab.VIDEO || (tab in listOf(AppTab.FAVORITES, AppTab.LIBRARY) && mode == 1)) "video" else "image"
     val section = if (kind == "video") BackendSection.VIDEOS else BackendSection.PHOTOS
@@ -118,6 +144,8 @@ import com.rslnabk.aivideotest.ui.theme.Ds
                         kind, state, favorite, effect, section in state.loaded)
                 } else {
                     remoteStatus(state, BackendSection.MODELS)
+                    if (tab == AppTab.PHOTO && photoEditor != null) item("photo_editor") { photoEditor() }
+                    else {
                     item("prompt_notice") { Notice(R.string.backend_generation_later) }
                     items(state.data.models.filter { it.kind == kind }, key = { it.id }) { model ->
                         Panel {
@@ -130,6 +158,7 @@ import com.rslnabk.aivideotest.ui.theme.Ds
                     }
                     if (BackendSection.MODELS in state.loaded && state.data.models.none { it.kind == kind })
                         item("empty_models") { Notice(R.string.backend_empty) }
+                    }
                 }
             }
             AppTab.FAVORITES -> {
@@ -142,7 +171,7 @@ import com.rslnabk.aivideotest.ui.theme.Ds
             AppTab.LIBRARY -> {
                 item("mode") { KindTabs(mode) { mode = it } }
                 remoteStatus(state, BackendSection.JOBS)
-                item("history_notice") { Notice(R.string.backend_history_readonly) }
+                item("history_notice") { Notice(if (photoEditor != null) R.string.backend_photo_history else R.string.backend_history_readonly) }
                 val jobs = state.data.jobs.filter { it.kind == kind }
                 items(jobs, key = { it.id }) { job -> Panel {
                     Text(job.prompt.ifBlank { stringResource(R.string.backend_creation) }, color = Ds.colors.labelPrimary, style = Ds.type.headlineEmphasized)
@@ -153,6 +182,7 @@ import com.rslnabk.aivideotest.ui.theme.Ds
                         else -> R.string.backend_unknown_status
                     }), color = Ds.colors.labelSecondary)
                     if (job.thumbnail != null) RemoteImage(job.thumbnail, Modifier.fillMaxWidth().height(160.dp))
+                    if (job.kind == "image" && photoEditor != null) DsButton(stringResource(R.string.backend_open_creation)) { photoJob(job) }
                 } }
                 if (jobs.isEmpty() && BackendSection.JOBS in state.loaded) item("empty_jobs") { Notice(R.string.backend_empty) }
                 if (state.data.nextCursor != null) item("more") {

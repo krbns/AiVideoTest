@@ -21,7 +21,10 @@ class HttpsBackendTransport(private val origin: String = "https://benvilo.shop")
             if (bearer != null) connection.setRequestProperty("Authorization", "Bearer " + bearer)
             if (body != null) {
                 connection.doOutput = true; connection.setRequestProperty("Content-Type", "application/json")
-                connection.outputStream.use { it.write(body.toByteArray(Charsets.UTF_8)) }
+                val bytes = body.toByteArray(Charsets.UTF_8)
+                // Streaming bodies cannot be buffered and replayed for authentication/redirects.
+                connection.setFixedLengthStreamingMode(bytes.size)
+                connection.outputStream.use { it.write(bytes) }
             }
             val status = connection.responseCode
             val stream = if (status in 200..299) connection.inputStream else connection.errorStream

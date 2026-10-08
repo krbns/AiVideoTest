@@ -19,6 +19,8 @@ import java.util.concurrent.Executors
 
 class AppViewModel(application: Application) : AndroidViewModel(application) {
     val backend = com.rslnabk.aivideotest.data.backend.BackendController(application)
+    val backendPhotos = com.rslnabk.aivideotest.data.backend.PhotoGenerationController(application, backend)
+    val backendExports = ExportController(application, "backend_export_v1")
     val catalog: CatalogRepository = DemoCatalogRepository()
     val exports = ExportController(application)
     private val session = DemoSession(PreferencesDemoStore(application.getSharedPreferences("demo_state_v1", Context.MODE_PRIVATE)), catalog)
@@ -168,5 +170,5 @@ class AppViewModel(application: Application) : AndroidViewModel(application) {
         if (result is SubmitResult.Accepted) { failNextGeneration = false; schedulePurchase() } else publish()
         return result
     }
-    override fun onCleared() { disposed = true; backend.close(); exports.close(); handler.removeCallbacksAndMessages(null); worker.shutdownNow(); super.onCleared() }
+    override fun onCleared() { disposed = true; backendPhotos.close(); backendExports.close(); backend.close(); exports.close(); handler.removeCallbacksAndMessages(null); worker.shutdownNow(); super.onCleared() }
 }

@@ -51,6 +51,23 @@ class MainActivity : ComponentActivity() {
     private val storage = registerForActivityResult(ActivityResultContracts.RequestPermission()) { granted ->
         model.exports.galleryPermission(model.snapshot.value!!.jobs.find { it.id == model.exports.state.value?.jobId }, granted)
     }
+    private val backendGallery = registerForActivityResult(ActivityResultContracts.PickVisualMedia()) { uri ->
+        if (uri != null) model.backendPhotos.importPhoto(uri)
+    }
+    private val backendCamera = registerForActivityResult(ActivityResultContracts.TakePicture()) { success ->
+        val path = cameraFile; cameraFile = null
+        if (success && path != null) model.backendPhotos.importPhoto(FileProvider.getUriForFile(this, "$packageName.fileprovider", File(path)))
+        else path?.let { File(it).delete() }
+    }
+    private fun backendContent() = model.backendPhotos.state.value?.let { state ->
+        state.local?.takeIf { model.backendExports.state.value?.jobId == state.job?.id }?.export(state.job!!.id)
+    }
+    private val backendDocument = registerForActivityResult(ActivityResultContracts.StartActivityForResult()) { result ->
+        model.backendExports.documentContent(backendContent(), if (result.resultCode == RESULT_OK) result.data?.data else null)
+    }
+    private val backendStorage = registerForActivityResult(ActivityResultContracts.RequestPermission()) { granted ->
+        model.backendExports.galleryContent(backendContent(), granted)
+    }
     private val gallery = registerForActivityResult(ActivityResultContracts.GetContent()) { uri ->
         val key = pendingPhotoKey; pendingPhotoKey = null
         if (uri != null && key != null) model.loadPhoto(key, uri.toString())
@@ -76,6 +93,8 @@ class MainActivity : ComponentActivity() {
         intent.removeExtra("notification_job")
         if (savedInstanceState == null && model.exports.state.value?.phase == ExportPhase.CHOOSING)
             model.exports.documentChosen(null, null)
+        if (savedInstanceState == null && model.backendExports.state.value?.phase == ExportPhase.CHOOSING)
+            model.backendExports.documentContent(null, null)
         setContent { AiVideoTheme { AiVideoApp(this, model) { navigator = it } } }
     }
     override fun onSaveInstanceState(outState: Bundle) {
@@ -86,7 +105,12 @@ class MainActivity : ComponentActivity() {
         outState.putString("notification_job", notificationJob)
         super.onSaveInstanceState(outState)
     }
-    override fun onResume() { super.onResume(); model.refreshNotifications(); model.refreshCache() }
+    override fun onResume() {
+        super.onResume(); model.refreshNotifications(); model.refreshCache()
+        if (model.backend.source.value == com.rslnabk.aivideotest.data.backend.DataSource.SERVER)
+            model.backendPhotos.activate(model.backend.state.value?.userId)
+    }
+    override fun onStop() { model.backendPhotos.pause(); super.onStop() }
     override fun onNewIntent(intent: Intent) {
         super.onNewIntent(intent)
         notificationJob = intent.getStringExtra("notification_job")
@@ -203,6 +227,38 @@ class MainActivity : ComponentActivity() {
     fun pickGallery(key: String) {
         pendingPhotoKey = key
         try { gallery.launch("image/*") } catch (_: ActivityNotFoundException) { pendingPhotoKey = null; toast(R.string.camera_unavailable) }
+    }
+    fun pickBackendPhoto() {
+        if (model.backendPhotos.state.value?.canEdit != true) return
+        try { backendGallery.launch(PickVisualMediaRequest(ActivityResultContracts.PickVisualMedia.ImageOnly)) }
+        catch (_: ActivityNotFoundException) { toast(R.string.photo_picker_unavailable) }
+    }
+    fun takeBackendPhoto() {
+        if (model.backendPhotos.state.value?.canEdit != true) return
+        val file = File(File(cacheDir, "camera").apply { mkdirs() }, "${UUID.randomUUID()}.jpg")
+        cameraFile = file.path
+        try { backendCamera.launch(FileProvider.getUriForFile(this, "$packageName.fileprovider", file)) }
+        catch (_: ActivityNotFoundException) { file.delete(); cameraFile = null; toast(R.string.camera_unavailable) }
+    }
+    fun exportBackendPhoto(destination: ExportDestination) {
+        val state = model.backendPhotos.state.value ?: return
+        val content = state.local?.export(state.job?.id ?: return) ?: return
+        val permission = destination == ExportDestination.GALLERY && Build.VERSION.SDK_INT <= 28 &&
+            ContextCompat.checkSelfPermission(this, Manifest.permission.WRITE_EXTERNAL_STORAGE) != PackageManager.PERMISSION_GRANTED
+        if (!model.backendExports.beginContent(content, destination, permission)) return
+        try {
+            if (permission) backendStorage.launch(Manifest.permission.WRITE_EXTERNAL_STORAGE)
+            else if (destination == ExportDestination.FILES) backendDocument.launch(Intent(Intent.ACTION_CREATE_DOCUMENT).apply {
+                addCategory(Intent.CATEGORY_OPENABLE); type = content.mime; putExtra(Intent.EXTRA_TITLE, content.name)
+            })
+        } catch (_: ActivityNotFoundException) { model.backendExports.fail(R.string.export_handler_missing) }
+    }
+    fun shareBackendReady() {
+        val operation = model.backendExports.claimShare() ?: return
+        val state = model.backendPhotos.state.value ?: return
+        val content = state.local?.takeIf { state.job?.id == operation.jobId }?.export(operation.jobId) ?: return
+        try { startActivity(Intent.createChooser(model.backendExports.media.shareIntent(content, operation.uri!!), getString(R.string.share))) }
+        catch (_: ActivityNotFoundException) { toast(R.string.export_handler_missing) }
     }
     fun takePhoto(key: String) {
         pendingPhotoKey = key

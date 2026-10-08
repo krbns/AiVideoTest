@@ -10,9 +10,9 @@ import java.io.File
 import java.util.UUID
 
 /** Imports downsampled photos into app-owned storage, so temporary picker grants need not persist. */
-class PhotoImporter(private val context: Context) {
+class PhotoImporter(private val context: Context, private val directoryName: String = "reference_photos") {
     fun import(uri: Uri): String {
-        val directory = File(context.filesDir, "reference_photos").apply { mkdirs() }
+        val directory = File(context.filesDir, directoryName).apply { mkdirs() }
         val raw = File(directory, "${UUID.randomUUID()}.tmp")
         val output = File(directory, "${UUID.randomUUID()}.jpg")
         try {

@@ -45,4 +45,9 @@ class BackendClient(private val transport: BackendTransport, private val store: 
         }
         return BackendJson.response(response)
     }
+    /** Mutations are sent once. A 401/timeout never replays this request. */
+    fun postOnce(path: String, body: JSONObject): JSONObject {
+        val session = synchronized(authLock) { validSession(store.load() ?: throw BackendFailure(401, "session_required")) }
+        return BackendJson.response(transport.request("POST", path, session.accessToken, body.toString()))
+    }
 }

@@ -15,8 +15,8 @@ import java.util.UUID
 import java.util.concurrent.Executors
 
 /** A single operation survives Activity recreation; IO never belongs to a Fragment view. */
-class ExportController(private val context: Context) {
-    private val preferences = context.getSharedPreferences("result_export_v1", Context.MODE_PRIVATE)
+class ExportController(private val context: Context, journalName: String = "result_export_v1") {
+    private val preferences = context.getSharedPreferences(journalName, Context.MODE_PRIVATE)
     private val worker = Executors.newSingleThreadExecutor()
     private val handler = Handler(Looper.getMainLooper())
     private val mutableState = MutableLiveData<ExportState?>()
@@ -73,13 +73,20 @@ class ExportController(private val context: Context) {
         mutableState.value = value
     }
     fun begin(job: GenerationJob, destination: ExportDestination, permission: Boolean = false): Boolean {
-        if (job.status != JobStatus.SUCCEEDED || mutableState.value?.busy == true) return false
+        if (job.status != JobStatus.SUCCEEDED) return false
+        return beginContent(media.content(job), destination, permission)
+    }
+    fun beginContent(job: ExportContent, destination: ExportDestination, permission: Boolean = false): Boolean {
+        if (mutableState.value?.busy == true) return false
         val phase = when { permission -> ExportPhase.PERMISSION; destination == ExportDestination.FILES -> ExportPhase.CHOOSING; else -> ExportPhase.WRITING }
         set(ExportState(UUID.randomUUID().toString(), job.id, destination, phase))
         if (phase == ExportPhase.WRITING) write(job)
         return true
     }
     fun galleryPermission(job: GenerationJob?, granted: Boolean) {
+        galleryContent(job?.let(media::content), granted)
+    }
+    fun galleryContent(job: ExportContent?, granted: Boolean) {
         val value = mutableState.value ?: return
         if (value.phase != ExportPhase.PERMISSION) return
         if (!granted) set(value.copy(phase = ExportPhase.FAILED, message = R.string.gallery_permission_denied))
@@ -87,6 +94,9 @@ class ExportController(private val context: Context) {
         else { set(value.copy(phase = ExportPhase.WRITING)); write(job) }
     }
     fun documentChosen(job: GenerationJob?, uri: Uri?) {
+        documentContent(job?.let(media::content), uri)
+    }
+    fun documentContent(job: ExportContent?, uri: Uri?) {
         val value = mutableState.value ?: return
         if (value.phase != ExportPhase.CHOOSING) return
         if (uri == null) { set(value.copy(phase = ExportPhase.CANCELLED)); return }
@@ -101,7 +111,7 @@ class ExportController(private val context: Context) {
         // Mark consumed before launching the system sheet: rotation must not send a second intent.
         set(null); return current
     }
-    private fun write(job: GenerationJob) {
+    private fun write(job: ExportContent) {
         val operation = mutableState.value ?: return
         val fail = failNext; failNext = false
         worker.execute {

@@ -19,7 +19,7 @@ class BackendController(context: Context, transport: BackendTransport = HttpsBac
     val state: LiveData<BackendState> = mutableState
     private val worker = Executors.newSingleThreadExecutor()
     private val main = Handler(Looper.getMainLooper())
-    private val client = BackendClient(transport, authStore)
+    internal val client = BackendClient(transport, authStore)
     private val cache = BackendReadCache(context)
     @Volatile private var epoch = 0
     @Volatile private var closed = false
@@ -75,6 +75,14 @@ class BackendController(context: Context, transport: BackendTransport = HttpsBac
         val favorites = current.favorites.toMutableSet().apply { if (!add(id)) remove(id) }.toSet()
         prefs.edit().putStringSet("favorites_" + user, favorites).apply()
         mutableState.value = current.copy(favorites = favorites)
+    }
+    fun refreshAfterMutation() {
+        if (closed || mutableSource.value != DataSource.SERVER) return
+        mutableState.value = mutableState.value!!.copy(cached = mutableState.value!!.cached +
+            setOf(BackendSection.WALLET, BackendSection.POLICY, BackendSection.JOBS))
+        if (mutableState.value!!.connecting || mutableState.value!!.loading.isNotEmpty())
+            main.postDelayed({ refreshAfterMutation() }, 1000)
+        else connect()
     }
     fun loadMore() {
         val current = mutableState.value!!

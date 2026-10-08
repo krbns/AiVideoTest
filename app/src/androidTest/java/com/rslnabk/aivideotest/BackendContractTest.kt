@@ -122,9 +122,9 @@ class BackendContractTest {
         try {
             fun waitLoaded() {
                 val deadline = System.currentTimeMillis() + 8000
-                while (System.currentTimeMillis() < deadline && controller.state.value!!.loading.isNotEmpty()) Thread.sleep(30)
-                // Allow the first posted authentication/cache state to become visible.
-                while (System.currentTimeMillis() < deadline && (controller.state.value!!.connecting || BackendSection.VIDEOS !in controller.state.value!!.loaded)) Thread.sleep(30)
+                // Cached catalogs may arrive before the new section errors. Wait for this whole refresh.
+                while (System.currentTimeMillis() < deadline && (controller.state.value!!.connecting ||
+                    controller.state.value!!.loading.isNotEmpty() || BackendSection.VIDEOS !in controller.state.value!!.loaded)) Thread.sleep(30)
                 assertTrue(BackendSection.VIDEOS in controller.state.value!!.loaded)
             }
             waitLoaded(); assertNull(controller.state.value!!.authError); assertTrue(BackendSection.MODELS in controller.state.value!!.errors)

@@ -44,7 +44,11 @@ object BackendJson {
             }
             BackendSection.MODELS -> data.copy(models = value.getJSONArray("models").objects().map { item ->
                 RemoteModel(item.getString("id"), item.getString("title"), item.getString("kind"),
-                    item.getJSONArray("modes").objects().map { mode -> RemoteMode(mode.getString("mode"), mode.strings("resolutions"), mode.strings("durations")) })
+                    item.getJSONArray("modes").objects().map { mode -> RemoteMode(mode.getString("mode"), mode.strings("resolutions"), mode.strings("durations"),
+                        mode.strings("params"), mode.strings("aspectRatios"), mode.strings("outputFormats"), mode.strings("requiredParams"),
+                        mode.optJSONObject("defaults")?.let { d -> d.keys().asSequence().associateWith { d.get(it).toString() } }.orEmpty()) },
+                    item.getInt("credits"), item.optJSONObject("resolutionCredits")?.let { prices -> prices.keys().asSequence().associateWith { prices.getInt(it) } }.orEmpty(),
+                    item.getInt("maxInputImages"), item.optInt("minInputImages"))
             })
             BackendSection.POLICY -> data.copy(policy = RemotePolicy(value.getBoolean("isSubscribed"), value.getInt("creditsBalance"),
                 value.getInt("trialRemaining"), value.getBoolean("canGenerateCreditsMode"), value.optional("plan"),
@@ -55,11 +59,16 @@ object BackendJson {
                 RemoteProduct(item.getString("productId"), item.optional("title"), if (item.isNull("credits")) null else item.getInt("credits"))
             })
             BackendSection.JOBS -> data.copy(jobs = value.getJSONArray("jobs").objects().map { item ->
-                val asset = item.optJSONArray("assets")?.optJSONObject(0)
-                RemoteJob(item.getString("jobId"), item.getString("kind"), item.getString("prompt"), item.getString("status"),
-                    asset?.optional("thumbnailUrl") ?: asset?.optional("url")?.takeIf { item.getString("kind") == "image" }, item.optional("errorCode"))
+                job(item)
             }.distinctBy { it.id }, nextCursor = value.optional("nextCursor"))
         }
+    }
+    fun job(item: JSONObject): RemoteJob = checked {
+        val first = item.optJSONArray("assets")?.optJSONObject(0)
+        RemoteJob(item.getString("jobId"), item.getString("kind"), item.getString("prompt"), item.getString("status"),
+            first?.optional("thumbnailUrl") ?: first?.optional("url")?.takeIf { item.getString("kind") == "image" }, item.optional("errorCode"),
+            item.optJSONArray("assets")?.objects()?.map { RemoteAsset(it.getString("url"), it.optional("contentType"), it.optional("fileName"), it.optional("expiresAt")) }.orEmpty(),
+            item.optDouble("progress", 0.0).toFloat().coerceIn(0f, 1f), item.optInt("creditsCharged"), item.optBoolean("creditsRefunded"), item.optString("model"))
     }
     private inline fun <T> checked(block: () -> T): T = try { block() } catch (_: Exception) { throw BackendFailure(code = "invalid_response") }
 }
