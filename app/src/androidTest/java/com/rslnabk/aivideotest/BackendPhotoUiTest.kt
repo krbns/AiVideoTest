@@ -31,11 +31,16 @@ class BackendPhotoUiTest {
     @Before fun demoSource() {
         compose.activity.getSharedPreferences("backend_source_v1", 0).edit().clear().commit()
     }
-    private fun flow(lost: Boolean, restricted: Boolean = false) {
+    private fun flow(lost: Boolean, restricted: Boolean = false, recover: Boolean = false, ambiguous: Boolean = false) {
         val context = compose.activity.applicationContext
         File(context.filesDir, "backend_photo/" + user + ".json").delete()
         val posts = AtomicInteger()
+        val details = AtomicInteger()
+        val second = "dddddddd-2222-3333-4444-555555555555"
         val response = """{"jobId":"$id","kind":"image","prompt":"A blue mountain","model":"creator","status":"completed","creditsCharged":3,"creditsRefunded":false,"progress":1,"assets":[{"url":"https://example.invalid/ui-result","contentType":null}]}"""
+        fun candidate(jobId: String) = JSONObject(response).put("jobId", jobId).put("mode", "textToImage")
+            .put("parameters", JSONObject().put("resolution", "1K")).put("inputImageUrls", org.json.JSONArray())
+            .put("createdAt", java.text.SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ssXXX", java.util.Locale.US).format(java.util.Date()))
         val store = object : BackendAuthStore {
             override fun deviceId() = "test"
             override fun load() = AuthSession(user, "test", "access", "refresh", System.currentTimeMillis() + 600000, Long.MAX_VALUE)
@@ -44,6 +49,10 @@ class BackendPhotoUiTest {
         val transport = BackendTransport { method, path, _, _ ->
             if (method == "POST") { posts.incrementAndGet(); if (lost) throw BackendFailure(); BackendResponse(202, response) }
             else when (path) {
+                "/v1/media/jobs?kind=image&limit=20" -> BackendResponse(200, JSONObject().put("jobs", org.json.JSONArray().apply {
+                    if (recover) { put(candidate(id)); if (ambiguous) put(candidate(second)) }
+                }).toString())
+                "/v1/media/jobs/$id", "/v1/media/jobs/$second" -> { details.incrementAndGet(); BackendResponse(200, candidate(path.substringAfterLast('/')).toString()) }
                 BackendSection.MODELS.path -> BackendResponse(200, """{"models":[{"id":"creator","title":"Creator","kind":"image","credits":3,"maxInputImages":1,"resolutionCredits":{"1K":3},"modes":[{"mode":"textToImage","params":["prompt","resolution"],"requiredParams":["prompt"],"resolutions":["1K"],"durations":[],"defaults":{"resolution":"1K"}}]}]}""")
                 BackendSection.PHOTOS.path, BackendSection.VIDEOS.path -> BackendResponse(200, """{"templates":[]}""")
                 BackendSection.JOBS.path -> BackendResponse(200, """{"jobs":[],"nextCursor":null}""")
@@ -83,6 +92,23 @@ class BackendPhotoUiTest {
                 compose.waitUntil(10000) { controller.state.value!!.phase == PhotoPhase.UNKNOWN }
                 compose.onNodeWithTag("remote_generate").assertIsNotEnabled()
                 compose.onNodeWithTag("remote_unknown").performScrollTo().assertIsDisplayed()
+                if (recover) {
+                    compose.waitUntil(10000) { !controller.state.value!!.recovery.loading && controller.state.value!!.recovery.candidates.size == if (ambiguous) 2 else 1 }
+                    assertEquals(PhotoPhase.UNKNOWN, controller.state.value!!.phase); assertEquals(0, details.get())
+                    val choice = if (ambiguous) second else id
+                    compose.onNodeWithTag("remote_recovery_" + choice).performScrollTo().performClick()
+                    compose.onNodeWithText("Cancel").performClick()
+                    assertEquals(PhotoPhase.UNKNOWN, controller.state.value!!.phase); assertEquals(0, details.get())
+                    compose.onNodeWithTag("remote_recovery_" + choice).performClick()
+                    compose.onNodeWithTag("remote_recovery_confirm").performClick()
+                    compose.waitUntil(10000) { controller.state.value!!.local != null }
+                    assertEquals(choice, controller.state.value!!.submissionJobId); assertEquals(1, details.get())
+                    compose.onNodeWithTag("remote_save_gallery").performScrollTo().assertIsEnabled()
+                } else {
+                    compose.waitUntil(10000) { controller.state.value!!.recovery.searched && !controller.state.value!!.recovery.loading }
+                    compose.onNodeWithTag("remote_recovery_empty").performScrollTo().assertIsDisplayed()
+                    compose.onNodeWithTag("remote_generate").performScrollTo().assertIsNotEnabled()
+                }
             } else {
                 compose.waitUntil(10000) { controller.state.value!!.local != null }
                 compose.onNodeWithTag("remote_job_status").assertTextEquals("Ready")
@@ -99,4 +125,6 @@ class BackendPhotoUiTest {
     @Test fun promptToDownloadedResultEnablesSave() = flow(false)
     @Test fun lostAnswerShowsWarningAndCannotSubmitAgain() = flow(true)
     @Test fun serverDenialDisablesGenerationWithoutSendingAnything() = flow(false, restricted = true)
+    @Test fun evenOneMatchingJobNeedsConfirmationAndResumesWithoutPost() = flow(true, recover = true)
+    @Test fun identicalJobsRemainUnknownUntilUserChoosesOne() = flow(true, recover = true, ambiguous = true)
 }

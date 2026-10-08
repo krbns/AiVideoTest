@@ -85,7 +85,8 @@ import java.io.File
         }
         if (state.phase == PhotoPhase.UNKNOWN) {
             Text(stringResource(R.string.backend_unknown_submission), Modifier.testTag("remote_unknown"), color = Ds.colors.accentRed)
-            DsButton(stringResource(R.string.backend_acknowledge_unknown)) { acknowledge = true }
+            PhotoRecoveryChoices(state, catalog, controller)
+            DsButton(stringResource(R.string.backend_acknowledge_unknown), enabled = !state.recovery.loading) { acknowledge = true }
         }
         if (state.failure != null && state.phase != PhotoPhase.UNKNOWN) PhotoFailure(state.failure)
         if (state.failure?.status == 401) DsButton(stringResource(R.string.backend_reconnect), onClick = reconnect)
@@ -103,6 +104,44 @@ import java.io.File
         confirmButton = { TextButton({ controller.acknowledgeUnknown(); acknowledge = false }) { Text(stringResource(R.string.backend_checked_history)) } },
         dismissButton = { TextButton({ acknowledge = false }) { Text(stringResource(R.string.cancel)) } })
 }
+@Composable private fun PhotoRecoveryChoices(state: PhotoState, catalog: BackendState, controller: PhotoGenerationController) {
+    val recovery = state.recovery
+    var selected by remember { mutableStateOf<RemoteJob?>(null) }
+    Text(stringResource(R.string.backend_recovery_notice), color = Ds.colors.labelSecondary, style = Ds.type.subheadlineRegular)
+    if (state.submission == null) Text(stringResource(R.string.backend_recovery_legacy), color = Ds.colors.labelTertiary)
+    if (recovery.loading) {
+        LinearProgressIndicator(Modifier.fillMaxWidth(), color = Ds.colors.accentPrimary)
+        Text(stringResource(R.string.backend_recovery_loading), color = Ds.colors.labelSecondary)
+    }
+    recovery.failure?.let { PhotoFailure(it) }
+    DsButton(stringResource(R.string.backend_recovery_search), Modifier.testTag("remote_recovery_search"), enabled = !recovery.loading) { controller.searchRecovery() }
+    if (recovery.searched && !recovery.loading && recovery.failure == null && recovery.candidates.isEmpty())
+        Text(stringResource(R.string.backend_recovery_empty), Modifier.testTag("remote_recovery_empty"), color = Ds.colors.labelTertiary)
+    recovery.candidates.forEach { candidate ->
+        Column(Modifier.fillMaxWidth().clip(RoundedCornerShape(20.dp)).background(Ds.colors.backgroundSecondary).padding(16.dp),
+            verticalArrangement = Arrangement.spacedBy(8.dp)) {
+            Text(catalog.data.models.find { it.id == candidate.model }?.title ?: candidate.model,
+                color = Ds.colors.labelPrimary, style = Ds.type.headlineEmphasized)
+            Text(candidateTime(candidate), color = Ds.colors.labelSecondary, style = Ds.type.subheadlineRegular)
+            Text(stringResource(when (candidate.status) { "completed" -> R.string.job_ready; "failed" -> R.string.job_failed;
+                "queued", "running" -> R.string.job_running; else -> R.string.backend_unknown_status }), color = Ds.colors.labelSecondary)
+            Text(stringResource(R.string.backend_actual_cost, candidate.charged), color = Ds.colors.labelSecondary)
+            Text(candidate.id, color = Ds.colors.labelTertiary, style = Ds.type.caption1Regular)
+            if (PhotoRecovery.incomplete(candidate, state.submission)) Text(stringResource(R.string.backend_recovery_incomplete), color = Ds.colors.accentPrimary)
+            DsButton(stringResource(R.string.backend_recovery_choose), Modifier.testTag("remote_recovery_" + candidate.id), enabled = !recovery.loading) { selected = candidate }
+        }
+    }
+    if (recovery.nextCursor != null) DsButton(stringResource(R.string.backend_recovery_more), Modifier.testTag("remote_recovery_more"), enabled = !recovery.loading) { controller.searchRecovery(more = true) }
+    selected?.let { candidate ->
+        AlertDialog(onDismissRequest = { selected = null }, title = { Text(stringResource(R.string.backend_recovery_confirm_title)) },
+            text = { Text(stringResource(R.string.backend_recovery_confirm_body, candidateTime(candidate), candidate.id, candidate.charged)) },
+            confirmButton = { TextButton({ selected = null; controller.recoverJob(candidate.id) }, Modifier.testTag("remote_recovery_confirm")) { Text(stringResource(R.string.backend_recovery_confirm)) } },
+            dismissButton = { TextButton({ selected = null }) { Text(stringResource(R.string.cancel)) } })
+    }
+}
+private fun candidateTime(job: RemoteJob): String = PhotoRecovery.time(job.createdAt)?.let {
+    java.text.DateFormat.getDateTimeInstance(java.text.DateFormat.MEDIUM, java.text.DateFormat.SHORT).format(java.util.Date(it))
+} ?: "—"
 @Composable private fun PhotoOptions(title: Int, values: List<String>, selected: String?, enabled: Boolean, change: (String) -> Unit) {
     if (values.isEmpty()) return
     Text(stringResource(title), color = Ds.colors.labelPrimary, style = Ds.type.headlineEmphasized)
@@ -155,6 +194,7 @@ import java.io.File
 }
 @Composable fun PhotoFailure(failure: BackendFailure) {
     val message = when {
+        failure.code in listOf("recovery_changed", "recovery_cursor") -> R.string.backend_recovery_changed
         failure.code in listOf("invalid_image", "unsupported_image", "no_output") -> R.string.backend_invalid_result
         failure.status == 409 -> R.string.backend_insufficient_credits
         failure.status == 410 || failure.code == "result_expired" -> R.string.backend_result_expired

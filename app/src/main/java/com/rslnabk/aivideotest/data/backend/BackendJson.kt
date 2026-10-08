@@ -68,7 +68,9 @@ object BackendJson {
         RemoteJob(item.getString("jobId"), item.getString("kind"), item.getString("prompt"), item.getString("status"),
             first?.optional("thumbnailUrl") ?: first?.optional("url")?.takeIf { item.getString("kind") == "image" }, item.optional("errorCode"),
             item.optJSONArray("assets")?.objects()?.map { RemoteAsset(it.getString("url"), it.optional("contentType"), it.optional("fileName"), it.optional("expiresAt")) }.orEmpty(),
-            item.optDouble("progress", 0.0).toFloat().coerceIn(0f, 1f), item.optInt("creditsCharged"), item.optBoolean("creditsRefunded"), item.optString("model"))
+            item.optDouble("progress", 0.0).toFloat().coerceIn(0f, 1f), item.optInt("creditsCharged"), item.optBoolean("creditsRefunded"), item.optString("model"),
+            item.optional("mode"), item.optJSONObject("parameters")?.toString(), item.optional("templateId"),
+            if (item.isNull("inputImageUrls")) null else item.strings("inputImageUrls"), item.optional("createdAt"))
     }
     private inline fun <T> checked(block: () -> T): T = try { block() } catch (_: Exception) { throw BackendFailure(code = "invalid_response") }
 }

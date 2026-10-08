@@ -15,8 +15,9 @@ data class PhotoDraft(val prompt: String = "", val modelId: String = "", val pho
 data class PhotoState(val draft: PhotoDraft = PhotoDraft(), val phase: PhotoPhase = PhotoPhase.EDITING,
     val submissionJobId: String? = null, val job: RemoteJob? = null, val failure: BackendFailure? = null,
     val importing: Boolean = false, val downloading: Boolean = false, val local: LocalPhoto? = null,
-    val downloadError: BackendFailure? = null) {
-    val busy get() = importing || phase in listOf(PhotoPhase.UPLOADING, PhotoPhase.SENDING, PhotoPhase.ACTIVE)
+    val downloadError: BackendFailure? = null, val submission: PhotoSubmission? = null,
+    val recovery: PhotoRecoveryState = PhotoRecoveryState()) {
+    val busy get() = importing || recovery.loading || phase in listOf(PhotoPhase.UPLOADING, PhotoPhase.SENDING, PhotoPhase.ACTIVE)
     val canEdit get() = !busy && phase != PhotoPhase.UNKNOWN
 }
 /** Only creator modes belong to Photo Prompt; processing modes have different required inputs. */
@@ -77,10 +78,10 @@ class PhotoJournal(context: Context) {
         catch (_: Exception) { target.failWrite(stream); throw BackendFailure(code = "photo_journal") }
     }
     companion object {
-        fun encode(draft: PhotoDraft, phase: PhotoPhase, job: JSONObject? = null) = JSONObject()
+        fun encode(draft: PhotoDraft, phase: PhotoPhase, job: JSONObject? = null, submission: PhotoSubmission? = null) = JSONObject()
             .put("prompt", draft.prompt).put("model", draft.modelId).put("photos", JSONArray(draft.photos))
             .put("resolution", draft.resolution).put("aspectRatio", draft.aspectRatio).put("outputFormat", draft.outputFormat)
-            .put("phase", phase.name).put("job", job)
+            .put("phase", phase.name).put("job", job).put("submission", submission?.json())
         fun restore(value: JSONObject): PhotoState {
             fun optional(key: String) = if (value.isNull(key)) null else value.optString(key).takeIf { it.isNotEmpty() }
             val photos = value.optJSONArray("photos")
@@ -95,7 +96,8 @@ class PhotoJournal(context: Context) {
             }
             val job = value.optJSONObject("job")?.let(BackendJson::job)
             return PhotoState(draft, if (phase == PhotoPhase.ACTIVE && job == null) PhotoPhase.UNKNOWN else phase,
-                job?.id, job, if (original == "UPLOADING") BackendFailure(code = "interrupted") else null)
+                job?.id, job, if (original == "UPLOADING") BackendFailure(code = "interrupted") else null,
+                submission = value.optJSONObject("submission")?.let(PhotoSubmission::restore))
         }
     }
 }

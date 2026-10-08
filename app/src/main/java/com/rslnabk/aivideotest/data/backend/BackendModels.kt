@@ -25,7 +25,9 @@ data class RemotePolicy(val subscribed: Boolean, val credits: Int, val trial: In
 data class RemoteProfile(val accountId: String, val name: String?)
 data class RemoteJob(val id: String, val kind: String, val prompt: String, val status: String,
     val thumbnail: String?, val errorCode: String?, val assets: List<RemoteAsset> = emptyList(),
-    val progress: Float = 0f, val charged: Int = 0, val refunded: Boolean = false, val model: String = "")
+    val progress: Float = 0f, val charged: Int = 0, val refunded: Boolean = false, val model: String = "",
+    val mode: String? = null, val parameters: String? = null, val templateId: String? = null,
+    val inputImageUrls: List<String>? = null, val createdAt: String? = null)
 data class RemoteAsset(val url: String, val mime: String?, val name: String?, val expiresAt: String?)
 data class RemoteProduct(val id: String, val title: String?, val credits: Int?)
 data class BackendData(val photos: List<RemoteTemplate> = emptyList(), val videos: List<RemoteTemplate> = emptyList(),

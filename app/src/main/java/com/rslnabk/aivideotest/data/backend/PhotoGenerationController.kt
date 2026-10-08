@@ -10,6 +10,7 @@ import androidx.lifecycle.MutableLiveData
 import com.rslnabk.aivideotest.data.demo.PhotoImporter
 import org.json.JSONObject
 import java.io.File
+import java.net.URLEncoder
 import java.util.concurrent.Executors
 import java.util.concurrent.ScheduledFuture
 import java.util.concurrent.TimeUnit
@@ -27,21 +28,24 @@ class PhotoGenerationController(private val context: Context, private val backen
     private var visible = false
     @Volatile private var closed = false
     private var pollFailures = 0
+    private var recoveryEpoch = 0
+    private val recoveryCursors = mutableSetOf<String>()
     fun activate(account: String?) {
         visible = true
         if (account == null) return
         if (user != account) {
-            polling?.cancel(false); user = account
+            polling?.cancel(false); user = account; recoveryEpoch++; recoveryCursors.clear()
             try {
                 val saved = journal.load(account); jobJson = saved.optJSONObject("job")
                 mutableState.value = PhotoJournal.restore(saved)
             } catch (_: Exception) { mutableState.value = PhotoState(phase = PhotoPhase.UNKNOWN, failure = BackendFailure(code = "photo_journal")) }
         }
         schedulePoll(0)
+        if (mutableState.value!!.phase == PhotoPhase.UNKNOWN && !mutableState.value!!.recovery.searched) searchRecovery()
     }
     fun pause() { visible = false; polling?.cancel(false); polling = null }
     private fun publish(value: PhotoState, persist: Boolean = true) {
-        if (persist && user != null) journal.save(user!!, PhotoJournal.encode(value.draft, value.phase, jobJson))
+        if (persist && user != null) journal.save(user!!, PhotoJournal.encode(value.draft, value.phase, jobJson, value.submission))
         mutableState.value = value
     }
     fun edit(change: (PhotoDraft) -> PhotoDraft) {
@@ -49,14 +53,15 @@ class PhotoGenerationController(private val context: Context, private val backen
         if (!state.canEdit) return
         if (state.phase in listOf(PhotoPhase.COMPLETE, PhotoPhase.REJECTED)) jobJson = null
         try { publish(state.copy(draft = change(state.draft), phase = PhotoPhase.EDITING, failure = null,
-            submissionJobId = null, job = null, local = null)) }
+            submissionJobId = null, job = null, local = null, submission = null, recovery = PhotoRecoveryState())) }
         catch (_: Exception) { mutableState.value = state.copy(phase = PhotoPhase.UNKNOWN, failure = BackendFailure(code = "photo_journal")) }
     }
     fun importPhoto(uri: Uri) {
         val current = mutableState.value!!; val account = user ?: return
         if (!current.canEdit) return
         jobJson = null
-        mutableState.value = current.copy(importing = true, failure = null, submissionJobId = null, job = null, local = null)
+        mutableState.value = current.copy(importing = true, failure = null, submissionJobId = null, job = null, local = null,
+            submission = null, recovery = PhotoRecoveryState())
         worker.execute {
             val result = runCatching { PhotoImporter(context, "backend_reference_photos").import(uri) }
             main.post {
@@ -86,11 +91,13 @@ class PhotoGenerationController(private val context: Context, private val backen
             BackendSection.MODELS !in catalog.loaded || BackendSection.MODELS in catalog.cached || catalog.authError != null) return
         val model = catalog.data.models.find { it.id == current.draft.modelId } ?: return
         if (!PhotoRequest.ready(model, current.draft)) return
-        val starting = current.copy(phase = PhotoPhase.UPLOADING, failure = null, job = null, submissionJobId = null, local = null, downloadError = null)
+        val starting = current.copy(phase = PhotoPhase.UPLOADING, failure = null, job = null, submissionJobId = null, local = null,
+            downloadError = null, submission = null, recovery = PhotoRecoveryState())
         jobJson = null
         try { publish(starting) } catch (_: Exception) { mutableState.value = current.copy(phase = PhotoPhase.UNKNOWN, failure = BackendFailure(code = "photo_journal")); return }
         worker.execute {
             var sent = false
+            var submission: PhotoSubmission? = null
             try {
                 val urls = starting.draft.photos.map { reference ->
                     require(reference.startsWith("file:"))
@@ -104,34 +111,102 @@ class PhotoGenerationController(private val context: Context, private val backen
                     uploaded.getString("url")
                 }
                 val request = PhotoRequest.build(model, starting.draft, urls)
-                journal.save(account, PhotoJournal.encode(starting.draft, PhotoPhase.SENDING))
+                submission = PhotoSubmission(System.currentTimeMillis(), request.toString(), catalog.data.jobs.map { it.id }.toSet())
+                journal.save(account, PhotoJournal.encode(starting.draft, PhotoPhase.SENDING, submission = submission))
                 sent = true
-                main.post { if (!closed && user == account) mutableState.value = starting.copy(phase = PhotoPhase.SENDING) }
+                val sending = starting.copy(phase = PhotoPhase.SENDING, submission = submission)
+                main.post { if (!closed && user == account) mutableState.value = sending }
                 val response = backend.client.postOnce("/v1/media/images", request)
                 val job = BackendJson.job(response)
                 java.util.UUID.fromString(job.id)
                 require(job.kind == "image")
                 val phase = if (job.status in listOf("completed", "failed")) PhotoPhase.COMPLETE else PhotoPhase.ACTIVE
-                journal.save(account, PhotoJournal.encode(starting.draft, phase, response))
+                journal.save(account, PhotoJournal.encode(starting.draft, phase, response, submission))
                 main.post {
                     if (closed || user != account) return@post
-                    jobJson = response; mutableState.value = starting.copy(phase = phase, job = job, submissionJobId = job.id)
+                    jobJson = response; mutableState.value = sending.copy(phase = phase, job = job, submissionJobId = job.id)
                     refreshBackend(); schedulePoll(0)
                 }
             } catch (error: Exception) {
                 val failure = error as? BackendFailure ?: BackendFailure(code = "invalid_response")
                 val rejected = sent && failure.status in setOf(400, 401, 403, 409, 413, 422, 429, 503)
                 val phase = if (sent && !rejected) PhotoPhase.UNKNOWN else PhotoPhase.REJECTED
-                runCatching { journal.save(account, PhotoJournal.encode(starting.draft, phase)) }
-                main.post { if (!closed && user == account) { mutableState.value = starting.copy(phase = phase, failure = failure); refreshBackend() } }
+                runCatching { journal.save(account, PhotoJournal.encode(starting.draft, phase, submission = submission)) }
+                val uncertain = starting.copy(phase = phase, failure = failure, submission = submission)
+                main.post { if (!closed && user == account) {
+                    mutableState.value = uncertain; refreshBackend()
+                    if (phase == PhotoPhase.UNKNOWN) searchRecovery()
+                } }
             }
         }
     }
     /** User has inspected history and explicitly accepts that another launch may be charged. */
     fun acknowledgeUnknown() {
-        if (mutableState.value!!.phase != PhotoPhase.UNKNOWN) return
-        try { publish(mutableState.value!!.copy(phase = PhotoPhase.EDITING, failure = null)) }
+        if (mutableState.value!!.phase != PhotoPhase.UNKNOWN || mutableState.value!!.recovery.loading) return
+        recoveryEpoch++
+        jobJson = null
+        try { publish(mutableState.value!!.copy(phase = PhotoPhase.EDITING, failure = null, job = null, submissionJobId = null,
+            local = null, submission = null, recovery = PhotoRecoveryState())) }
         catch (_: Exception) { mutableState.value = mutableState.value!!.copy(failure = BackendFailure(code = "photo_journal")) }
+    }
+    /** History is read fresh and separately from the Library cache. A match never binds itself. */
+    fun searchRecovery(more: Boolean = false) {
+        val current = mutableState.value!!; val account = user ?: return
+        if (closed || !visible || current.phase != PhotoPhase.UNKNOWN || current.recovery.loading ||
+            backend.source.value != DataSource.SERVER || backend.state.value!!.userId != account) return
+        val cursor = if (more) current.recovery.nextCursor ?: return else null
+        if (!more) recoveryCursors.clear()
+        val epoch = ++recoveryEpoch
+        val previous = if (more) current.recovery else PhotoRecoveryState()
+        mutableState.value = current.copy(recovery = previous.copy(loading = true, searched = true, failure = null))
+        worker.execute {
+            val result = runCatching {
+                val path = "/v1/media/jobs?kind=image&limit=20" + (cursor?.let { "&cursor=" + URLEncoder.encode(it, "UTF-8") } ?: "")
+                BackendJson.update(BackendData(), BackendSection.JOBS, backend.client.get(path))
+            }
+            main.post {
+                if (closed || user != account || backend.state.value!!.userId != account || recoveryEpoch != epoch || mutableState.value!!.phase != PhotoPhase.UNKNOWN) return@post
+                val state = mutableState.value!!
+                mutableState.value = state.copy(recovery = result.fold({ page ->
+                    cursor?.let(recoveryCursors::add)
+                    val loop = page.nextCursor != null && page.nextCursor in recoveryCursors
+                    val candidates = page.jobs.filter { PhotoRecovery.matches(it, state.draft, state.submission) }
+                    previous.copy(loading = false, searched = true, candidates = (previous.candidates + candidates).distinctBy { it.id },
+                        nextCursor = page.nextCursor.takeUnless { loop }, scanned = previous.scanned + page.jobs.size,
+                        failure = if (loop) BackendFailure(code = "recovery_cursor") else null)
+                }, { previous.copy(loading = false, searched = true, failure = it as? BackendFailure ?: BackendFailure()) }))
+            }
+        }
+    }
+    /** Called only after the user selects and confirms a candidate; detail GET revalidates it. */
+    fun recoverJob(id: String) {
+        val current = mutableState.value!!; val account = user ?: return
+        if (closed || !visible || current.phase != PhotoPhase.UNKNOWN || current.recovery.loading ||
+            backend.source.value != DataSource.SERVER || backend.state.value!!.userId != account ||
+            current.recovery.candidates.none { it.id == id } || runCatching { java.util.UUID.fromString(id) }.isFailure) return
+        val epoch = ++recoveryEpoch
+        mutableState.value = current.copy(recovery = current.recovery.copy(loading = true, failure = null))
+        worker.execute {
+            val result = runCatching {
+                val json = backend.client.get("/v1/media/jobs/" + id); val job = BackendJson.job(json)
+                if (job.id != id || !PhotoRecovery.matches(job, current.draft, current.submission)) throw BackendFailure(code = "recovery_changed")
+                json to job
+            }
+            main.post {
+                if (closed || user != account || backend.state.value!!.userId != account || recoveryEpoch != epoch || mutableState.value!!.phase != PhotoPhase.UNKNOWN) return@post
+                result.fold({ (json, job) ->
+                    val phase = if (job.status in listOf("completed", "failed")) PhotoPhase.COMPLETE else PhotoPhase.ACTIVE
+                    val recovered = current.copy(phase = phase, job = job, submissionJobId = id, failure = null,
+                        local = null, downloading = false, downloadError = null, recovery = PhotoRecoveryState())
+                    try {
+                        journal.save(account, PhotoJournal.encode(recovered.draft, phase, json, recovered.submission))
+                        jobJson = json; mutableState.value = recovered; refreshBackend(); schedulePoll(pollMillis)
+                    } catch (_: Exception) {
+                        mutableState.value = current.copy(recovery = current.recovery.copy(failure = BackendFailure(code = "photo_journal")))
+                    }
+                }, { error -> mutableState.value = current.copy(recovery = current.recovery.copy(failure = error as? BackendFailure ?: BackendFailure())) })
+            }
+        }
     }
     fun openJob(job: RemoteJob) {
         if (job.kind != "image") return
