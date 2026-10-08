@@ -12,7 +12,7 @@ import java.util.Locale
 import java.util.TimeZone
 import java.util.UUID
 
-data class LocalPhoto(val file: File, val mime: String, val name: String) {
+data class LocalPhoto(val file: File, val mime: String, val name: String, val poster: File? = null, val aspectRatio: Float? = null) {
     fun export(jobId: String) = ExportContent(jobId, mime, name) { output -> file.inputStream().use { it.copyTo(output) } }
 }
 /** Results are downloaded as their original bytes. References and demo fixtures never enter this path. */

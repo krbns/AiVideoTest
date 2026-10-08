@@ -50,4 +50,8 @@ class BackendClient(private val transport: BackendTransport, private val store: 
         val session = synchronized(authLock) { validSession(store.load() ?: throw BackendFailure(401, "session_required")) }
         return BackendJson.response(transport.request("POST", path, session.accessToken, body.toString()))
     }
+    fun deleteOnce(path: String): JSONObject {
+        val session = synchronized(authLock) { validSession(store.load() ?: throw BackendFailure(401, "session_required")) }
+        return BackendJson.response(transport.request("DELETE", path, session.accessToken, null))
+    }
 }

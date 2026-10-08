@@ -20,6 +20,7 @@ import java.util.concurrent.Executors
 class AppViewModel(application: Application) : AndroidViewModel(application) {
     val backend = com.rslnabk.aivideotest.data.backend.BackendController(application)
     val backendPhotos = com.rslnabk.aivideotest.data.backend.PhotoGenerationController(application, backend)
+    val backendVideos = com.rslnabk.aivideotest.data.backend.PhotoGenerationController(application, backend, kind = "video")
     val backendExports = ExportController(application, "backend_export_v1")
     val catalog: CatalogRepository = DemoCatalogRepository()
     val exports = ExportController(application)
@@ -170,5 +171,5 @@ class AppViewModel(application: Application) : AndroidViewModel(application) {
         if (result is SubmitResult.Accepted) { failNextGeneration = false; schedulePurchase() } else publish()
         return result
     }
-    override fun onCleared() { disposed = true; backendPhotos.close(); backendExports.close(); backend.close(); exports.close(); handler.removeCallbacksAndMessages(null); worker.shutdownNow(); super.onCleared() }
+    override fun onCleared() { disposed = true; backendPhotos.close(); backendVideos.close(); backendExports.close(); backend.close(); exports.close(); handler.removeCallbacksAndMessages(null); worker.shutdownNow(); super.onCleared() }
 }

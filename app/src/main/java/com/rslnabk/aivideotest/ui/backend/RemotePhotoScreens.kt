@@ -35,14 +35,21 @@ import java.io.File
     host: MainActivity, reconnect: () -> Unit) {
     val models = PhotoRequest.models(catalog.data, state.draft)
     val model = models.find { it.id == state.draft.modelId }
+    val template = PhotoRequest.template(catalog.data, state.draft)
     LaunchedEffect(models, state.draft.mode) {
-        if (state.canEdit && models.isNotEmpty()) controller.edit { PhotoRequest.defaults(it, model ?: models.first()) }
+        if (state.canEdit && state.draft.templateId == null && models.isNotEmpty()) controller.edit { PhotoRequest.defaults(it, model ?: models.first()) }
     }
     val mode = model?.let { PhotoRequest.mode(it, state.draft) }
     val focus = LocalFocusManager.current
     var chooseModel by remember { mutableStateOf(false) }
     var acknowledge by remember { mutableStateOf(false) }
     Column(Modifier.padding(horizontal = 16.dp).imePadding(), verticalArrangement = Arrangement.spacedBy(16.dp)) {
+        if (state.draft.templateId != null) {
+            Text(template?.title ?: stringResource(R.string.backend_empty), color = Ds.colors.labelPrimary, style = Ds.type.title3Emphasized)
+            Text(stringResource(R.string.backend_effect_settings), color = Ds.colors.labelSecondary)
+            template?.steps?.sortedBy { it.index }?.forEach { step -> Text(stringResource(R.string.backend_pipeline_step, step.index,
+                if (step.kind == "image") stringResource(R.string.photos) else stringResource(R.string.videos)), color = Ds.colors.labelTertiary) }
+        } else {
         Text(stringResource(R.string.describe_idea), color = Ds.colors.accentPrimary, style = Ds.type.title3Emphasized)
         TextField(state.draft.prompt, { value -> controller.edit { it.copy(prompt = value) } },
             Modifier.fillMaxWidth().heightIn(min = 130.dp).testTag("remote_prompt"), enabled = state.canEdit,
@@ -66,6 +73,12 @@ import java.io.File
         PhotoOptions(R.string.resolutions, mode?.resolutions.orEmpty(), state.draft.resolution, state.canEdit) { value -> controller.edit { it.copy(resolution = value) } }
         PhotoOptions(R.string.backend_aspect_ratio, mode?.aspectRatios.orEmpty(), state.draft.aspectRatio, state.canEdit) { value -> controller.edit { it.copy(aspectRatio = value) } }
         PhotoOptions(R.string.backend_output_format, mode?.outputFormats.orEmpty(), state.draft.outputFormat, state.canEdit) { value -> controller.edit { it.copy(outputFormat = value) } }
+        PhotoOptions(R.string.backend_duration, mode?.durations.orEmpty(), state.draft.duration, state.canEdit) { value -> controller.edit { it.copy(duration = value) } }
+        if (state.draft.generateAudio != null) Row(verticalAlignment = androidx.compose.ui.Alignment.CenterVertically) {
+            Text(stringResource(R.string.backend_generate_audio), Modifier.weight(1f), color = Ds.colors.labelPrimary)
+            Switch(state.draft.generateAudio, { value -> controller.edit { it.copy(generateAudio = value) } }, enabled = state.canEdit, modifier = Modifier.testTag("remote_audio"))
+        }
+        }
         val context = LocalContext.current
         state.draft.photos.forEachIndexed { index, reference ->
             Column(verticalArrangement = Arrangement.spacedBy(6.dp)) {
@@ -73,10 +86,13 @@ import java.io.File
                 DsButton(stringResource(R.string.backend_remove_reference, index + 1), enabled = state.canEdit) { controller.removePhoto(reference) }
             }
         }
-        val remaining = (model?.maxImages ?: catalog.data.models.filter { it.kind == "image" && it.modes.any { m -> m.name == "imageToImage" } }.maxOfOrNull { it.maxImages } ?: 0) - state.draft.photos.size
+        val remaining = (if (state.draft.templateId != null) template?.requiredImages ?: 0 else model?.maxImages ?: catalog.data.models.filter {
+            it.kind == state.draft.kind && it.modes.any { m -> m.name == if (state.draft.kind == "video") "imageToVideo" else "imageToImage" }
+        }.maxOfOrNull { it.maxImages } ?: 0) - state.draft.photos.size
+        if (template != null) Text(stringResource(R.string.backend_reference_count, template.requiredImages), color = Ds.colors.labelSecondary)
         FlowRow(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-            DsButton(stringResource(R.string.choose_photo), enabled = state.canEdit && remaining > 0) { focus.clearFocus(); host.pickBackendPhoto() }
-            DsButton(stringResource(R.string.backend_camera), enabled = state.canEdit && remaining > 0) { focus.clearFocus(); host.takeBackendPhoto() }
+            DsButton(stringResource(R.string.choose_photo), enabled = state.canEdit && remaining > 0) { focus.clearFocus(); host.pickBackendPhoto(state.draft.kind) }
+            DsButton(stringResource(R.string.backend_camera), enabled = state.canEdit && remaining > 0) { focus.clearFocus(); host.takeBackendPhoto(state.draft.kind) }
         }
         Text(stringResource(R.string.backend_reference_privacy), color = Ds.colors.labelTertiary, style = Ds.type.caption1Regular)
         if (state.importing || state.phase in listOf(PhotoPhase.UPLOADING, PhotoPhase.SENDING)) {
@@ -90,13 +106,16 @@ import java.io.File
         }
         if (state.failure != null && state.phase != PhotoPhase.UNKNOWN) PhotoFailure(state.failure)
         if (state.failure?.status == 401) DsButton(stringResource(R.string.backend_reconnect), onClick = reconnect)
-        val price = model?.let { PhotoRequest.cost(it, state.draft) }
+        val price = PhotoRequest.cost(catalog.data, state.draft)
         if (price != null) Text(stringResource(R.string.backend_estimated_cost, price), color = Ds.colors.labelSecondary)
         if ((catalog.data.policy?.trial ?: 0) > 0) Text(stringResource(R.string.backend_trial_notice), color = Ds.colors.labelTertiary, style = Ds.type.caption1Regular)
         if (!PhotoRequest.allowed(catalog.data)) Text(stringResource(R.string.backend_access_restricted), color = Ds.colors.accentRed)
-        val fresh = BackendSection.MODELS in catalog.loaded && BackendSection.MODELS !in catalog.cached && catalog.authError == null
-        DsButton(stringResource(R.string.backend_generate_photo), Modifier.fillMaxWidth().testTag("remote_generate"), primary = true,
-            enabled = fresh && PhotoRequest.allowed(catalog.data) && state.canEdit && PhotoRequest.ready(model, state.draft)) { focus.clearFocus(); controller.submit() }
+        val section = if (state.draft.kind == "video") BackendSection.VIDEOS else BackendSection.PHOTOS
+        val fresh = BackendSection.MODELS in catalog.loaded && BackendSection.MODELS !in catalog.cached && catalog.authError == null &&
+            (state.draft.templateId == null || section in catalog.loaded && section !in catalog.cached)
+        DsButton(stringResource(if (state.draft.templateId != null) R.string.use_effect else if (state.draft.kind == "video") R.string.backend_generate_video else R.string.backend_generate_photo),
+            Modifier.fillMaxWidth().testTag("remote_generate"), primary = true,
+            enabled = fresh && PhotoRequest.allowed(catalog.data) && state.canEdit && PhotoRequest.ready(catalog.data, state.draft)) { focus.clearFocus(); controller.submit() }
         if (state.phase == PhotoPhase.ACTIVE) Text(stringResource(R.string.backend_creation_pending), color = Ds.colors.labelSecondary)
     }
     if (acknowledge) AlertDialog(onDismissRequest = { acknowledge = false }, title = { Text(stringResource(R.string.backend_check_history)) },
@@ -149,9 +168,12 @@ private fun candidateTime(job: RemoteJob): String = PhotoRecovery.time(job.creat
         values.forEach { value -> FilterChip(value == selected, { change(value) }, enabled = enabled, label = { Text(value) }) }
     }
 }
-@Composable fun RemotePhotoResult(state: PhotoState, controller: PhotoGenerationController, exports: ExportController, host: MainActivity) {
+@Composable fun RemotePhotoResult(state: PhotoState, controller: PhotoGenerationController, exports: ExportController, host: MainActivity,
+    onEditor: () -> Unit = {}, onDeleted: () -> Unit = {}) {
     val job = state.job
     val export by exports.state.observeAsState()
+    var action by remember { mutableStateOf<String?>(null) }
+    LaunchedEffect(state.deletedJobId) { if (state.deletedJobId != null) onDeleted() }
     LaunchedEffect(job?.id, job?.status) { if (job?.status == "completed") controller.download() }
     LaunchedEffect(export?.id, export?.phase) { if (export?.phase == ExportPhase.SHARE_READY) host.shareBackendReady() }
     Column(Modifier.fillMaxSize().verticalScroll(rememberScrollState()).padding(16.dp), verticalArrangement = Arrangement.spacedBy(16.dp)) {
@@ -165,16 +187,28 @@ private fun candidateTime(job: RemoteJob): String = PhotoRecovery.time(job.creat
         }
         Text(stringResource(R.string.backend_actual_cost, job.charged), color = Ds.colors.accentPrimary)
         if (job.refunded) Text(stringResource(R.string.backend_credits_refunded), color = Ds.colors.labelSecondary)
+        job.pipelineStage?.let { stage -> Text(stringResource(R.string.backend_pipeline_stage,
+            stringResource(when (stage) { "image" -> R.string.photos; "video" -> R.string.videos; else -> R.string.backend_unknown_status })), color = Ds.colors.labelSecondary) }
         if (state.failure != null) { PhotoFailure(state.failure); DsButton(stringResource(R.string.refresh), onClick = controller::refreshJob) }
         if (job.status == "failed") Text(stringResource(if (job.errorCode == "canceled") R.string.backend_job_canceled else R.string.backend_generation_failed), color = Ds.colors.accentRed)
         if (state.downloading) { CircularProgressIndicator(color = Ds.colors.accentPrimary); Text(stringResource(R.string.backend_downloading), color = Ds.colors.labelSecondary) }
-        state.local?.let { LocalPhotoImage(it.file, Modifier.fillMaxWidth().heightIn(min = 200.dp, max = 500.dp).aspectRatio(1f)) }
+        state.local?.let { if (job.kind == "video") RemoteVideoPlayer(it, job.id) else LocalPhotoImage(it.file, Modifier.fillMaxWidth().heightIn(min = 200.dp, max = 500.dp).aspectRatio(1f)) }
         state.downloadError?.let { PhotoFailure(it); DsButton(stringResource(R.string.retry), onClick = controller::download) }
         if (job.status == "completed") {
-            val ready = state.local != null && export?.busy != true
-            DsButton(stringResource(R.string.save_gallery), Modifier.fillMaxWidth().testTag("remote_save_gallery"), enabled = ready) { host.exportBackendPhoto(ExportDestination.GALLERY) }
-            DsButton(stringResource(R.string.save_files), Modifier.fillMaxWidth(), enabled = ready) { host.exportBackendPhoto(ExportDestination.FILES) }
-            DsButton(stringResource(R.string.share), Modifier.fillMaxWidth(), enabled = ready) { host.exportBackendPhoto(ExportDestination.SHARE) }
+            val ready = state.local != null && export?.busy != true && !state.actionBusy
+            DsButton(stringResource(R.string.save_gallery), Modifier.fillMaxWidth().testTag("remote_save_gallery"), enabled = ready) { host.exportBackendPhoto(ExportDestination.GALLERY, job.kind) }
+            DsButton(stringResource(R.string.save_files), Modifier.fillMaxWidth(), enabled = ready) { host.exportBackendPhoto(ExportDestination.FILES, job.kind) }
+            DsButton(stringResource(R.string.share), Modifier.fillMaxWidth(), enabled = ready) { host.exportBackendPhoto(ExportDestination.SHARE, job.kind) }
+        }
+        if (state.actionBusy) CircularProgressIndicator(color = Ds.colors.accentPrimary)
+        if (state.actionError != null) { Text(stringResource(R.string.backend_job_action_failed), color = Ds.colors.accentRed); DsButton(stringResource(R.string.refresh), onClick = controller::refreshJob) }
+        val canAct = !state.actionBusy && export?.busy != true
+        if (job.status in setOf("queued", "running")) DsButton(stringResource(R.string.backend_cancel_creation), Modifier.testTag("remote_cancel"), enabled = canAct) { action = "cancel" }
+        if (job.status in setOf("completed", "failed")) {
+            DsButton(stringResource(R.string.delete_generation), Modifier.testTag("remote_delete"), enabled = canAct) { action = "delete" }
+            DsButton(stringResource(R.string.backend_review_new_creation), Modifier.testTag("remote_new_creation"), enabled = state.canEdit && canAct) {
+                if (controller.reviewNewGeneration()) onEditor()
+            }
         }
         export?.takeIf { it.jobId == job.id }?.let { operation ->
             if (operation.phase == ExportPhase.WRITING) CircularProgressIndicator(color = Ds.colors.accentPrimary)
@@ -182,6 +216,11 @@ private fun candidateTime(job: RemoteJob): String = PhotoRecovery.time(job.creat
             operation.message?.let { Text(stringResource(it), color = Ds.colors.accentRed) }
         }
     }
+    action?.let { selected -> AlertDialog(onDismissRequest = { action = null },
+        title = { Text(stringResource(if (selected == "delete") R.string.delete_generation else R.string.backend_cancel_creation)) },
+        text = { Text(stringResource(if (selected == "delete") R.string.backend_delete_creation_notice else R.string.backend_cancel_creation_notice)) },
+        confirmButton = { TextButton({ action = null; if (selected == "delete") controller.deleteJob() else controller.cancelJob() }, Modifier.testTag("remote_action_confirm")) { Text(stringResource(R.string.backend_confirm_action)) } },
+        dismissButton = { TextButton({ action = null }) { Text(stringResource(R.string.cancel)) } }) }
 }
 @Composable fun LocalPhotoImage(file: File, modifier: Modifier) {
     BoxWithConstraints(modifier.clip(RoundedCornerShape(24.dp)).background(Ds.colors.backgroundSecondary)) {
@@ -195,7 +234,7 @@ private fun candidateTime(job: RemoteJob): String = PhotoRecovery.time(job.creat
 @Composable fun PhotoFailure(failure: BackendFailure) {
     val message = when {
         failure.code in listOf("recovery_changed", "recovery_cursor") -> R.string.backend_recovery_changed
-        failure.code in listOf("invalid_image", "unsupported_image", "no_output") -> R.string.backend_invalid_result
+        failure.code in listOf("invalid_image", "unsupported_image", "invalid_video", "unsupported_video", "no_output", "result_too_large") -> R.string.backend_invalid_result
         failure.status == 409 -> R.string.backend_insufficient_credits
         failure.status == 410 || failure.code == "result_expired" -> R.string.backend_result_expired
         failure.status == 404 -> if (failure.code == "download") R.string.result_missing else R.string.backend_job_missing

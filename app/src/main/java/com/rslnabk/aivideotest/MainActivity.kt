@@ -28,6 +28,7 @@ class MainActivity : ComponentActivity() {
         private set
     val model get() = ViewModelProvider(this)[AppViewModel::class.java]
     private var pendingPhotoKey: String? = null
+    private var backendPhotoKind = "image"
     private var cameraFile: String? = null
     private var introPickerPending = false
     private var notificationPending = false
@@ -52,16 +53,17 @@ class MainActivity : ComponentActivity() {
         model.exports.galleryPermission(model.snapshot.value!!.jobs.find { it.id == model.exports.state.value?.jobId }, granted)
     }
     private val backendGallery = registerForActivityResult(ActivityResultContracts.PickVisualMedia()) { uri ->
-        if (uri != null) model.backendPhotos.importPhoto(uri)
+        if (uri != null) backendController(backendPhotoKind).importPhoto(uri)
     }
     private val backendCamera = registerForActivityResult(ActivityResultContracts.TakePicture()) { success ->
         val path = cameraFile; cameraFile = null
-        if (success && path != null) model.backendPhotos.importPhoto(FileProvider.getUriForFile(this, "$packageName.fileprovider", File(path)))
+        if (success && path != null) backendController(backendPhotoKind).importPhoto(FileProvider.getUriForFile(this, "$packageName.fileprovider", File(path)))
         else path?.let { File(it).delete() }
     }
-    private fun backendContent() = model.backendPhotos.state.value?.let { state ->
-        state.local?.takeIf { model.backendExports.state.value?.jobId == state.job?.id }?.export(state.job!!.id)
-    }
+    private fun backendController(kind: String) = if (kind == "video") model.backendVideos else model.backendPhotos
+    private fun backendContent(jobId: String? = model.backendExports.state.value?.jobId) = listOf(model.backendPhotos, model.backendVideos).mapNotNull { controller ->
+        controller.state.value?.let { state -> state.local?.takeIf { jobId == state.job?.id }?.export(state.job!!.id) }
+    }.firstOrNull()
     private val backendDocument = registerForActivityResult(ActivityResultContracts.StartActivityForResult()) { result ->
         model.backendExports.documentContent(backendContent(), if (result.resultCode == RESULT_OK) result.data?.data else null)
     }
@@ -85,6 +87,7 @@ class MainActivity : ComponentActivity() {
             isAppearanceLightStatusBars = false; isAppearanceLightNavigationBars = false
         }
         pendingPhotoKey = savedInstanceState?.getString("pending_photo_key")
+        backendPhotoKind = savedInstanceState?.getString("backend_photo_kind") ?: "image"
         cameraFile = savedInstanceState?.getString("camera_file")
         introPickerPending = savedInstanceState?.getBoolean("intro_picker") ?: false
         notificationPending = savedInstanceState?.getBoolean("notification_pending") ?: false
@@ -98,6 +101,7 @@ class MainActivity : ComponentActivity() {
         setContent { AiVideoTheme { AiVideoApp(this, model) { navigator = it } } }
     }
     override fun onSaveInstanceState(outState: Bundle) {
+        outState.putString("backend_photo_kind", backendPhotoKind)
         outState.putString("pending_photo_key", pendingPhotoKey); outState.putString("camera_file", cameraFile)
         outState.putBoolean("intro_picker", introPickerPending)
         outState.putBoolean("notification_pending", notificationPending)
@@ -108,9 +112,9 @@ class MainActivity : ComponentActivity() {
     override fun onResume() {
         super.onResume(); model.refreshNotifications(); model.refreshCache()
         if (model.backend.source.value == com.rslnabk.aivideotest.data.backend.DataSource.SERVER)
-            model.backendPhotos.activate(model.backend.state.value?.userId)
+            { model.backendPhotos.activate(model.backend.state.value?.userId); model.backendVideos.activate(model.backend.state.value?.userId) }
     }
-    override fun onStop() { model.backendPhotos.pause(); super.onStop() }
+    override fun onStop() { model.backendPhotos.pause(); model.backendVideos.pause(); super.onStop() }
     override fun onNewIntent(intent: Intent) {
         super.onNewIntent(intent)
         notificationJob = intent.getStringExtra("notification_job")
@@ -228,20 +232,22 @@ class MainActivity : ComponentActivity() {
         pendingPhotoKey = key
         try { gallery.launch("image/*") } catch (_: ActivityNotFoundException) { pendingPhotoKey = null; toast(R.string.camera_unavailable) }
     }
-    fun pickBackendPhoto() {
-        if (model.backendPhotos.state.value?.canEdit != true) return
+    fun pickBackendPhoto(kind: String = "image") {
+        if (backendController(kind).state.value?.canEdit != true) return
+        backendPhotoKind = kind
         try { backendGallery.launch(PickVisualMediaRequest(ActivityResultContracts.PickVisualMedia.ImageOnly)) }
         catch (_: ActivityNotFoundException) { toast(R.string.photo_picker_unavailable) }
     }
-    fun takeBackendPhoto() {
-        if (model.backendPhotos.state.value?.canEdit != true) return
+    fun takeBackendPhoto(kind: String = "image") {
+        if (backendController(kind).state.value?.canEdit != true) return
+        backendPhotoKind = kind
         val file = File(File(cacheDir, "camera").apply { mkdirs() }, "${UUID.randomUUID()}.jpg")
         cameraFile = file.path
         try { backendCamera.launch(FileProvider.getUriForFile(this, "$packageName.fileprovider", file)) }
         catch (_: ActivityNotFoundException) { file.delete(); cameraFile = null; toast(R.string.camera_unavailable) }
     }
-    fun exportBackendPhoto(destination: ExportDestination) {
-        val state = model.backendPhotos.state.value ?: return
+    fun exportBackendPhoto(destination: ExportDestination, kind: String = "image") {
+        val state = backendController(kind).state.value ?: return
         val content = state.local?.export(state.job?.id ?: return) ?: return
         val permission = destination == ExportDestination.GALLERY && Build.VERSION.SDK_INT <= 28 &&
             ContextCompat.checkSelfPermission(this, Manifest.permission.WRITE_EXTERNAL_STORAGE) != PackageManager.PERMISSION_GRANTED
@@ -255,8 +261,7 @@ class MainActivity : ComponentActivity() {
     }
     fun shareBackendReady() {
         val operation = model.backendExports.claimShare() ?: return
-        val state = model.backendPhotos.state.value ?: return
-        val content = state.local?.takeIf { state.job?.id == operation.jobId }?.export(operation.jobId) ?: return
+        val content = backendContent(operation.jobId) ?: return
         try { startActivity(Intent.createChooser(model.backendExports.media.shareIntent(content, operation.uri!!), getString(R.string.share))) }
         catch (_: ActivityNotFoundException) { toast(R.string.export_handler_missing) }
     }

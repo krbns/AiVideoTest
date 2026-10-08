@@ -38,7 +38,10 @@ object BackendJson {
                         if (video) item.optional("coverPosterUrl") else item.optional("coverUrl"),
                         if (video) item.optional("coverPreviewUrl") ?: item.optional("coverUrl") else null,
                         item.strings("categories"), item.getInt("tokens"), item.getInt("requiredInputImages"),
-                        item.getString("pipeline"), item.optBoolean("isNew"), item.optBoolean("isTrending"))
+                        item.getString("pipeline"), item.optBoolean("isNew"), item.optBoolean("isTrending"), item.optString("model"), item.optString("mode"),
+                        item.optJSONObject("parameters")?.toString(), item.optJSONArray("steps")?.objects()?.map {
+                            RemoteTemplateStep(it.getInt("index"), it.getString("kind"), it.getString("model"), it.getInt("requiredInputImages"))
+                        }.orEmpty(), item.optional("section"))
                 }.distinctBy { it.id }
                 if (section == BackendSection.PHOTOS) data.copy(photos = items) else data.copy(videos = items)
             }
@@ -48,7 +51,10 @@ object BackendJson {
                         mode.strings("params"), mode.strings("aspectRatios"), mode.strings("outputFormats"), mode.strings("requiredParams"),
                         mode.optJSONObject("defaults")?.let { d -> d.keys().asSequence().associateWith { d.get(it).toString() } }.orEmpty()) },
                     item.getInt("credits"), item.optJSONObject("resolutionCredits")?.let { prices -> prices.keys().asSequence().associateWith { prices.getInt(it) } }.orEmpty(),
-                    item.getInt("maxInputImages"), item.optInt("minInputImages"))
+                    item.getInt("maxInputImages"), item.optInt("minInputImages"),
+                    if (item.isNull("baseDurationSeconds")) null else item.getInt("baseDurationSeconds"),
+                    item.optJSONObject("resolutionMultipliers")?.let { prices -> prices.keys().asSequence().associateWith { prices.getInt(it) } }.orEmpty(),
+                    if (item.isNull("audioMultiplier")) null else item.getDouble("audioMultiplier"), item.optBoolean("supportsAudio"))
             })
             BackendSection.POLICY -> data.copy(policy = RemotePolicy(value.getBoolean("isSubscribed"), value.getInt("creditsBalance"),
                 value.getInt("trialRemaining"), value.getBoolean("canGenerateCreditsMode"), value.optional("plan"),
@@ -70,7 +76,7 @@ object BackendJson {
             item.optJSONArray("assets")?.objects()?.map { RemoteAsset(it.getString("url"), it.optional("contentType"), it.optional("fileName"), it.optional("expiresAt")) }.orEmpty(),
             item.optDouble("progress", 0.0).toFloat().coerceIn(0f, 1f), item.optInt("creditsCharged"), item.optBoolean("creditsRefunded"), item.optString("model"),
             item.optional("mode"), item.optJSONObject("parameters")?.toString(), item.optional("templateId"),
-            if (item.isNull("inputImageUrls")) null else item.strings("inputImageUrls"), item.optional("createdAt"))
+            if (item.isNull("inputImageUrls")) null else item.strings("inputImageUrls"), item.optional("createdAt"), item.optional("pipelineStage"))
     }
     private inline fun <T> checked(block: () -> T): T = try { block() } catch (_: Exception) { throw BackendFailure(code = "invalid_response") }
 }

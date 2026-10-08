@@ -25,12 +25,13 @@ object PhotoRecovery {
     /** Missing legacy metadata weakens evidence; a conflicting value always excludes a job. */
     fun matches(job: RemoteJob, draft: PhotoDraft, submission: PhotoSubmission?): Boolean = runCatching {
         java.util.UUID.fromString(job.id)
-        if (job.kind != "image" || job.model != draft.modelId || job.prompt != draft.prompt) return false
+        if (job.kind != draft.kind || job.model != draft.modelId || job.prompt != draft.prompt) return false
         val request = submission?.let { JSONObject(it.body) } ?: JSONObject().put("model", draft.modelId)
             .put("mode", draft.mode).put("prompt", draft.prompt).put("resolution", draft.resolution)
-            .put("aspectRatio", draft.aspectRatio).put("outputFormat", draft.outputFormat)
+            .put("aspectRatio", draft.aspectRatio).put("outputFormat", draft.outputFormat).put("duration", draft.duration)
+            .put("generateAudio", draft.generateAudio).put("templateId", draft.templateId)
         if (job.templateId != request.optString("templateId").takeIf { it.isNotBlank() && it != "null" }) return false
-        if (job.mode != null && job.mode != request.getString("mode")) return false
+        if (job.mode != null && request.has("mode") && job.mode != request.getString("mode")) return false
         if (submission != null) {
             if (job.id in submission.knownJobIds) return false
             val created = time(job.createdAt)
@@ -38,7 +39,8 @@ object PhotoRecovery {
             if (created != null && (created < submission.sentAt - 5 * 60000L || created > submission.sentAt + 10 * 60000L)) return false
             val expected = request.optJSONArray("imageUrls")?.let { a -> (0 until a.length()).map { a.getString(it) } }
                 ?: request.optString("imageUrl").takeIf { it.isNotBlank() }?.let(::listOf) ?: emptyList()
-            if (job.inputImageUrls != null && job.inputImageUrls != expected) return false
+            // Templates can add hidden references or use the first pipeline result as video input.
+            if (draft.templateId == null && job.inputImageUrls != null && job.inputImageUrls != expected) return false
         }
         val actual = job.parameters?.let(::JSONObject)
         if (actual != null) for (key in request.keys()) {
@@ -47,7 +49,8 @@ object PhotoRecovery {
         true
     }.getOrDefault(false)
     fun incomplete(job: RemoteJob, submission: PhotoSubmission?) = submission == null || job.mode == null ||
-        job.parameters == null || time(job.createdAt) == null || job.inputImageUrls == null
+        job.parameters == null || time(job.createdAt) == null || job.inputImageUrls == null ||
+        JSONObject(submission.body).has("templateId")
 
     fun time(raw: String?): Long? {
         if (raw == null) return null
