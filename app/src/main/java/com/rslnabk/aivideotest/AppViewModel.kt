@@ -22,6 +22,7 @@ class AppViewModel(application: Application) : AndroidViewModel(application) {
     val backendPhotos = com.rslnabk.aivideotest.data.backend.PhotoGenerationController(application, backend)
     val backendVideos = com.rslnabk.aivideotest.data.backend.PhotoGenerationController(application, backend, kind = "video")
     val backendExports = ExportController(application, "backend_export_v1")
+    val serverIntroPhoto = com.rslnabk.aivideotest.data.backend.ServerIntroPhoto(application)
     val catalog: CatalogRepository = DemoCatalogRepository()
     val exports = ExportController(application)
     private val session = DemoSession(PreferencesDemoStore(application.getSharedPreferences("demo_state_v1", Context.MODE_PRIVATE)), catalog)
@@ -76,9 +77,21 @@ class AppViewModel(application: Application) : AndroidViewModel(application) {
     fun editDraft(key: String, change: (GenerationDraft) -> GenerationDraft) { session.updateDraft(key, change); publish() }
     fun markInstructionSeen() { session.markInstructionSeen(); publish() }
     fun advanceIntro(expected: IntroStep) { session.advanceIntro(expected); publish() }
-    fun finishIntroPhoto(choice: IntroPhotoChoice) { session.finishIntroPhoto(choice); publish() }
+    fun finishIntroPhoto(choice: IntroPhotoChoice) {
+        if (session.snapshot.preferences.introStep == IntroStep.PHOTOS &&
+            backend.source.value == com.rslnabk.aivideotest.data.backend.DataSource.SERVER &&
+            choice in listOf(IntroPhotoChoice.SKIPPED, IntroPhotoChoice.CANCELLED) && !serverIntroPhoto.discard()) return
+        session.finishIntroPhoto(choice)
+        publish()
+    }
     fun backIntro() { session.backIntro(); publish() }
-    fun completeIntro(): Boolean { val changed = session.completeIntro(); publish(); return changed }
+    fun completeIntro(): Boolean {
+        val changed = session.completeIntro(showOffer = backend.source.value == com.rslnabk.aivideotest.data.backend.DataSource.DEMO)
+        publish(); return changed
+    }
+    fun importServerIntroPhoto(uri: android.net.Uri, choice: IntroPhotoChoice = IntroPhotoChoice.PICKED) {
+        serverIntroPhoto.import(uri, backend.state.value?.userId, choice) { finishIntroPhoto(choice); serverIntroPhoto.markAdvanced() }
+    }
     fun markIntroOfferShown() { session.markIntroOfferShown(); publish() }
     fun replayIntro() { session.replayIntro(); publish() }
     fun refreshNotifications() { notificationsAllowed.value = notifications.allowed() }
@@ -87,7 +100,7 @@ class AppViewModel(application: Application) : AndroidViewModel(application) {
         val previously = session.snapshot.preferences.notificationsEnabled
         session.setNotifications(enabled); refreshNotifications(); publish()
         if (!enabled) notifications.cancel()
-        if (enabled && !previously && notifications.allowed()) notifications.preview()
+        if (enabled && !previously && notifications.allowed() && backend.source.value == com.rslnabk.aivideotest.data.backend.DataSource.DEMO) notifications.preview()
     }
     fun editReview(rating: Int? = null, name: String? = null, text: String? = null) { session.editReview(rating, name, text); publish() }
     fun declineRating() { session.declineRating(); publish() }
@@ -191,5 +204,5 @@ class AppViewModel(application: Application) : AndroidViewModel(application) {
         if (result is SubmitResult.Accepted) { failNextGeneration = false; schedulePurchase() } else publish()
         return result
     }
-    override fun onCleared() { disposed = true; backendPhotos.close(); backendVideos.close(); backendExports.close(); backend.close(); exports.close(); handler.removeCallbacksAndMessages(null); worker.shutdownNow(); super.onCleared() }
+    override fun onCleared() { disposed = true; serverIntroPhoto.close(); backendPhotos.close(); backendVideos.close(); backendExports.close(); backend.close(); exports.close(); handler.removeCallbacksAndMessages(null); worker.shutdownNow(); super.onCleared() }
 }

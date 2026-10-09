@@ -1,6 +1,7 @@
 package com.rslnabk.aivideotest
 
 import android.app.NotificationManager
+import android.app.Notification
 import android.content.Intent
 import com.rslnabk.aivideotest.data.demo.*
 import android.os.Build
@@ -16,6 +17,10 @@ import org.junit.runner.RunWith
 
 @RunWith(AndroidJUnit4::class)
 class NotificationFlowTest : ComposeFlowTest() {
+    // Android may add its own automatic group summary; it is not another app delivery.
+    private fun deliveries(manager: NotificationManager) = manager.activeNotifications.filter {
+        it.notification.flags and Notification.FLAG_GROUP_SUMMARY == 0
+    }
     private fun notificationSwitch(): SemanticsNodeInteraction {
         tag("settings_list").performScrollToKey("notifications")
         return tag("notification_switch")
@@ -32,16 +37,21 @@ class NotificationFlowTest : ComposeFlowTest() {
         manager.cancelAll()
         try { ActivityScenario.launch(MainActivity::class.java).use { scenario ->
             tag("tab_settings").performClick(); notificationSwitch().performClick()
-            tag("notification_switch").assertIsOn(); assertEquals(1, manager.activeNotifications.size)
-            scenario.recreate(); assertEquals(1, manager.activeNotifications.size)
+            tag("notification_switch").assertIsOn(); assertEquals(1, deliveries(manager).size)
+            scenario.recreate()
+            assertEquals(setOf(41), deliveries(manager).map { it.id }.toSet())
             scenario.onActivity { it.model.setAccount(DemoAccount(100)); it.model.editDraft("prompt_photo") { d -> d.copy(prompt = "A morning") }; it.model.submit("prompt_photo") }
-            await(scenario) { it.snapshot.value!!.jobs.singleOrNull()?.status == JobStatus.SUCCEEDED && manager.activeNotifications.size == 2 }
-            val notification = manager.activeNotifications.first { it.id != 41 }
+            await(scenario) { it.snapshot.value!!.jobs.singleOrNull()?.status == JobStatus.SUCCEEDED && deliveries(manager).size == 2 }
+            val notification = deliveries(manager).first { it.id != 41 }
             notification.notification.contentIntent.send()
             ui.waitUntil(12000) { ui.onAllNodesWithTag("share").fetchSemanticsNodes().isNotEmpty() }; tag("share").assertIsDisplayed()
-            manager.cancel(notification.id); scenario.recreate(); assertEquals(1, manager.activeNotifications.size)
+            manager.cancel(notification.id)
+            // NotificationManager cancellation is asynchronous, independent of Activity recreation.
+            ui.waitUntil(12000) { deliveries(manager).none { it.id == notification.id } }
+            scenario.recreate()
+            assertEquals(setOf(41), deliveries(manager).map { it.id }.toSet())
             back(scenario); notificationSwitch().performClick().assertIsOff()
-            assertEquals(0, manager.activeNotifications.size)
+            ui.waitUntil(12000) { deliveries(manager).isEmpty() }
             scenario.onActivity { assertEquals(90, it.model.snapshot.value!!.account.tokens); assertEquals(1, it.model.snapshot.value!!.jobs.size) }
         } } finally { manager.cancelAll() }
     }

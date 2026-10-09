@@ -1,0 +1,8 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="server_intro_reviews">Your next creation</string>
+    <string name="server_intro_reviews_body">Bring your ideas to life with photos and videos</string>
+    <string name="server_intro_notifications_body">You can allow notifications now. Generation alerts will be available in a future update. For now, check progress and results in Library.</string>
+    <string name="server_intro_photo_body">Choose a photo for the photo editor, try a sample, or continue later. It stays on this device until you start a generation.</string>
+    <string name="server_intro_photo_failed">Could not save this photo. Please choose another photo or continue without it.</string>
+</resources>

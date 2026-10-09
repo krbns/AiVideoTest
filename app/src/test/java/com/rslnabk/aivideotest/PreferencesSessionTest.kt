@@ -12,6 +12,17 @@ class PreferencesSessionTest {
         override fun save(snapshot: DemoSnapshot) { value = snapshot }
     }
     private fun session(store: Store = Store()) = DemoSession(store, DemoCatalogRepository())
+    @Test fun `server intro completion persists without scheduling a demo offer or changing account`() {
+        val store = Store(); val s = session(store)
+        s.setAccount(DemoAccount(45, true)); s.toggleFavorite("photo_gold")
+        val before = s.snapshot
+        assertTrue(s.completeIntro(showOffer = false)); assertFalse(s.completeIntro(showOffer = false))
+        val restored = session(store).snapshot
+        assertEquals(IntroStep.DONE, restored.preferences.introStep)
+        assertFalse(restored.preferences.introOfferPending)
+        assertEquals(before.account, restored.account); assertEquals(before.favorites, restored.favorites)
+        assertEquals(before.jobs, restored.jobs)
+    }
     @Test fun `intro advances once from expected step and resumes a stored step`() {
         val store = Store(); val first = session(store)
         assertTrue(first.advanceIntro(IntroStep.WELCOME)); assertFalse(first.advanceIntro(IntroStep.WELCOME))

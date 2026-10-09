@@ -33,9 +33,9 @@ class DemoSession(private val store: DemoStore, private val catalog: CatalogRepo
         if (step != IntroStep.WELCOME && step != IntroStep.DONE)
             preferences { it.copy(introStep = IntroStep.entries[step.ordinal - 1]) }
     }
-    fun completeIntro(): Boolean {
+    fun completeIntro(showOffer: Boolean = true): Boolean {
         if (snapshot.preferences.introStep == IntroStep.DONE) return false
-        preferences { it.copy(introStep = IntroStep.DONE, introOfferPending = true) }; return true
+        preferences { it.copy(introStep = IntroStep.DONE, introOfferPending = showOffer) }; return true
     }
     fun replayIntro() = preferences { it.copy(introStep = IntroStep.WELCOME, introPhotoChoice = IntroPhotoChoice.NONE, introOfferPending = false) }
     fun markIntroOfferShown() = preferences { it.copy(introOfferPending = false) }

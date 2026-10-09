@@ -82,6 +82,21 @@ class PhotoGenerationController(private val context: Context, private val backen
             }
         }
     }
+    /** Accept the already-normalized local intro photo without replacing a draft or replaying HTTP. */
+    fun acceptOnboardingPhoto(reference: String): Boolean {
+        val current = mutableState.value!!
+        if (user == null || !reference.startsWith("file:") || File(reference.removePrefix("file:")).name != reference.removePrefix("file:")) return false
+        if (reference in current.draft.photos) return true
+        if (!current.canEdit || current.draft.templateId != null || current.draft.photos.isNotEmpty()) return false
+        val file = File(context.filesDir, "backend_reference_photos/${reference.removePrefix("file:")}")
+        if (!file.isFile) return false
+        edit { draft ->
+            val changed = draft.copy(photos = listOf(reference))
+            val models = PhotoRequest.models(backend.state.value!!.data, changed)
+            (models.find { it.id == changed.modelId } ?: models.firstOrNull())?.let { PhotoRequest.defaults(changed, it) } ?: changed
+        }
+        return reference in mutableState.value!!.draft.photos
+    }
     fun removePhoto(reference: String) = edit { draft ->
         val changed = draft.copy(photos = draft.photos - reference)
         if (draft.templateId != null) return@edit changed

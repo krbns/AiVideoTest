@@ -16,6 +16,9 @@ import androidx.core.content.ContextCompat
 import androidx.core.content.FileProvider
 import androidx.core.view.WindowCompat
 import androidx.lifecycle.ViewModelProvider
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.setValue
+import androidx.compose.runtime.mutableStateOf
 import com.rslnabk.aivideotest.model.*
 import com.rslnabk.aivideotest.ui.navigation.*
 import com.rslnabk.aivideotest.ui.theme.AiVideoTheme
@@ -31,13 +34,20 @@ class MainActivity : ComponentActivity() {
     private var backendPhotoKind = "image"
     private var cameraFile: String? = null
     private var introPickerPending = false
+    private var introPickerServer = false
+    var introNotificationsBlocked by mutableStateOf(false)
+        private set
     private var notificationPending = false
     private var notificationForIntro = false
     private var notificationJob: String? = null
     private val introPhoto = registerForActivityResult(ActivityResultContracts.PickVisualMedia()) { uri ->
         introPickerPending = false
-        if (uri != null) model.loadPhoto("prompt_photo", uri.toString())
-        model.finishIntroPhoto(if (uri == null) IntroPhotoChoice.CANCELLED else IntroPhotoChoice.PICKED)
+        if (introPickerServer && uri != null) model.importServerIntroPhoto(uri)
+        else {
+            if (uri != null) model.loadPhoto("prompt_photo", uri.toString())
+            model.finishIntroPhoto(if (uri == null) IntroPhotoChoice.CANCELLED else IntroPhotoChoice.PICKED)
+        }
+        introPickerServer = false
     }
     private val notificationPermission = registerForActivityResult(ActivityResultContracts.RequestPermission()) { granted ->
         notificationPending = false
@@ -90,6 +100,8 @@ class MainActivity : ComponentActivity() {
         backendPhotoKind = savedInstanceState?.getString("backend_photo_kind") ?: "image"
         cameraFile = savedInstanceState?.getString("camera_file")
         introPickerPending = savedInstanceState?.getBoolean("intro_picker") ?: false
+        introPickerServer = savedInstanceState?.getBoolean("intro_picker_server") ?: false
+        introNotificationsBlocked = savedInstanceState?.getBoolean("intro_notifications_blocked") ?: false
         notificationPending = savedInstanceState?.getBoolean("notification_pending") ?: false
         notificationForIntro = savedInstanceState?.getBoolean("notification_intro") ?: false
         notificationJob = savedInstanceState?.getString("notification_job") ?: intent.getStringExtra("notification_job")
@@ -104,6 +116,8 @@ class MainActivity : ComponentActivity() {
         outState.putString("backend_photo_kind", backendPhotoKind)
         outState.putString("pending_photo_key", pendingPhotoKey); outState.putString("camera_file", cameraFile)
         outState.putBoolean("intro_picker", introPickerPending)
+        outState.putBoolean("intro_picker_server", introPickerServer)
+        outState.putBoolean("intro_notifications_blocked", introNotificationsBlocked)
         outState.putBoolean("notification_pending", notificationPending)
         outState.putBoolean("notification_intro", notificationForIntro)
         outState.putString("notification_job", notificationJob)
@@ -134,6 +148,7 @@ class MainActivity : ComponentActivity() {
     fun pickIntroPhoto() {
         if (introPickerPending) return
         introPickerPending = true
+        introPickerServer = model.backend.source.value == com.rslnabk.aivideotest.data.backend.DataSource.SERVER
         try { introPhoto.launch(PickVisualMediaRequest(ActivityResultContracts.PickVisualMedia.ImageOnly)) }
         catch (_: ActivityNotFoundException) { introPickerPending = false; model.finishIntroPhoto(IntroPhotoChoice.CANCELLED); toast(R.string.photo_picker_unavailable) }
     }
@@ -146,8 +161,11 @@ class MainActivity : ComponentActivity() {
         } else if (Build.VERSION.SDK_INT >= 33 && (!model.snapshot.value!!.preferences.notificationAsked || shouldShowRequestPermissionRationale(Manifest.permission.POST_NOTIFICATIONS))) {
             model.markNotificationAsked(); notificationPending = true
             notificationPermission.launch(Manifest.permission.POST_NOTIFICATIONS)
+        } else if (fromIntro && model.backend.source.value == com.rslnabk.aivideotest.data.backend.DataSource.SERVER) {
+            notificationForIntro = false; introNotificationsBlocked = true
         } else navigator.show("notification_blocked", value = if (fromIntro) "intro" else "settings")
     }
+    fun dismissIntroNotifications() { introNotificationsBlocked = false; finishIntro() }
     fun openNotificationSettings() {
         // Keep the preference separate from the permission managed by Android.
         model.setNotifications(true)

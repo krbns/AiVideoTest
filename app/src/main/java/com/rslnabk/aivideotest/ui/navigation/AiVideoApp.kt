@@ -85,7 +85,7 @@ class AppNavigator(val nav: NavHostController) {
 @Composable fun AiVideoApp(host: MainActivity, model: AppViewModel, bind: (AppNavigator) -> Unit) {
     val source by model.backend.source.observeAsState(com.rslnabk.aivideotest.data.backend.DataSource.SERVER)
     if (source == com.rslnabk.aivideotest.data.backend.DataSource.SERVER) {
-        com.rslnabk.aivideotest.ui.backend.BackendApp(model, host)
+        com.rslnabk.aivideotest.ui.onboarding.ServerOnboardingApp(model, host)
     } else DemoAiVideoApp(host, model, bind)
 }
 

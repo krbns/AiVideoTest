@@ -1,0 +1,93 @@
+{
+  "date": "2026-10-09",
+  "baseCommit": "ff9928b",
+  "debugBuild": "PASS",
+  "releaseBuild": "PASS",
+  "unit": {
+    "tests": 36,
+    "failures": 0
+  },
+  "lint": {
+    "Warning": 59,
+    "Hint": 2
+  },
+  "instrumentation": {
+    "api": 36,
+    "firstRun": {
+      "tests": 32,
+      "passed": 31,
+      "failed": 1
+    },
+    "focusedNotificationRecheck": {
+      "tests": 2,
+      "passed": 2
+    },
+    "finalUniqueCases": {
+      "tests": 32,
+      "passed": 32
+    },
+    "note": "Initial notification count included an Android automatic group summary. Final test filters FLAG_GROUP_SUMMARY and awaits asynchronous cancellation. Production demo notification delivery unchanged.",
+    "cases": {
+      "com.rslnabk.aivideotest.ServerOnboardingTest.committedPhotoImportRecoversIfProcessStopsBeforeIntroStepIsAdvanced": true,
+      "com.rslnabk.aivideotest.ServerOnboardingTest.permanentlyDeniedNotificationsCanBeSkippedWithoutDemoNavigator": true,
+      "com.rslnabk.aivideotest.ServerOnboardingTest.previouslyCompletedIntroSkipsWelcomeAndKeepsExistingDraft": true,
+      "com.rslnabk.aivideotest.ServerOnboardingTest.backFromNotificationsThenSkipDiscardsPreviouslySelectedSample": true,
+      "com.rslnabk.aivideotest.ServerOnboardingTest.galleryResultGoesToServerDraftAndCancelStillAllowsCompletion": true,
+      "com.rslnabk.aivideotest.ServerOnboardingTest.pendingPhotoOwnershipSurvivesRestartAndPreventsDeliveryToAnotherAccount": true,
+      "com.rslnabk.aivideotest.ServerOnboardingTest.invalidPhotoStaysOnSelectionAndCanBeSkipped": true,
+      "com.rslnabk.aivideotest.ServerOnboardingTest.firstRunResumesAcrossRecreationAndColdLaunchThenFinishesWithoutDemoOffer": true,
+      "com.rslnabk.aivideotest.ServerOnboardingTest.offlineSampleIsNormalizedThenDeliveredOnceToSameAccountAfterColdLaunch": true,
+      "com.rslnabk.aivideotest.ServerOnboardingTest.cancelledGallerySkipsPhotoWithoutDraftMutation": true,
+      "com.rslnabk.aivideotest.BackendMediaBridgeTest.cameraFullSizeResultIsImportedThroughFileProvider": true,
+      "com.rslnabk.aivideotest.BackendMediaBridgeTest.galleryResultRoutesToVideoAndNormalizedCopySurvivesRecreation": true,
+      "com.rslnabk.aivideotest.BackendMediaBridgeTest.cancelledPickerAndCameraLeaveDraftEmptyAndRemoveTemporaryCapture": true,
+      "com.rslnabk.aivideotest.PreferencesPersistenceTest.legacyUpgradeKeepsAccountAndSkipsIntroButFreshInstallStartsWelcome": true,
+      "com.rslnabk.aivideotest.PreferencesPersistenceTest.preferencesRoundTripPreservesDraftsAndAcceptedEvents": true,
+      "com.rslnabk.aivideotest.NotificationFlowTest.optInPreviewFutureReadyTapAndRotationNeverDuplicateNotification": true,
+      "com.rslnabk.aivideotest.NotificationFlowTest.coldNotificationIntentOpensReadyResultOnceAndNormalLaunchStaysCatalog": true,
+      "com.rslnabk.aivideotest.BackendStartupTest.mutation401NeverReplaysAfterExplicitSessionReconnect": true,
+      "com.rslnabk.aivideotest.BackendStartupTest.unreadableIdentityNeverCreatesAnotherAccountOrLoadsArbitraryCache": true,
+      "com.rslnabk.aivideotest.BackendStartupTest.explicitDebugDemoMakesNoNetworkRequests": true,
+      "com.rslnabk.aivideotest.BackendStartupTest.foregroundRefreshIsThrottledAndReadsOnly": true,
+      "com.rslnabk.aivideotest.BackendStartupTest.expiredOfflineSessionKeepsCacheAndReconnectsSameIdentityWithoutReplayingRefresh": true,
+      "com.rslnabk.aivideotest.BackendStartupTest.pendingRefreshSurvivesEncryptedStoreRecreation": true,
+      "com.rslnabk.aivideotest.BackendStartupTest.pausedInFlightPollCannotUpdateStateAndResumeUsesKnownJobWithoutPost": true,
+      "com.rslnabk.aivideotest.BackendStartupTest.freshInstallationOpensServerAndRegistersOnlyOnceAcrossControllers": true,
+      "com.rslnabk.aivideotest.BackendStartupTest.releaseIgnoresSavedDemoAndCannotSwitchToDemo": true,
+      "com.rslnabk.aivideotest.BackendStartupTest.refreshJournalWriteFailurePreventsAnyExchange": true,
+      "com.rslnabk.aivideotest.PreferencesFlowTest.completedIntroPendingOfferRecoversOnceAfterColdLaunch": true,
+      "com.rslnabk.aivideotest.PreferencesFlowTest.reviewDraftBackRotationUnicodeValidationAndLocalSave": true,
+      "com.rslnabk.aivideotest.PreferencesFlowTest.subscriptionCardsClearCancelFailureRetryAndLegalKeepData": true,
+      "com.rslnabk.aivideotest.PreferencesFlowTest.messageDraftSurvivesBackAndSavesWithoutSending": true,
+      "com.rslnabk.aivideotest.PreferencesFlowTest.introResumeBackSampleFinishOnceAndSkipOnNextLaunch": true
+    }
+  },
+  "nativeRelease": {
+    "api": 36,
+    "firstLaunchOnboarding": true,
+    "realAndroidNotificationPermissionAllow": true,
+    "serverCatalog": true,
+    "coldLaunchSkipsIntro": true,
+    "paidOperations": false
+  },
+  "limitations": [
+    "API 24/28/34/37 and physical devices not rerun in this batch",
+    "FCM and billing remain deferred",
+    "Server feedback endpoint/store review route remain unspecified"
+  ],
+  "apks": [
+    {
+      "path": "/Users/kurban/Documents/Codex/2026-10-09/AiVideoTest-server-onboarding/AiVideoTest-server-onboarding-release-local.apk",
+      "bytes": 6386042,
+      "sha256": "a388eced3ae0f7f9ef2bd0bb31b85750d72fbbc1738148e3884c20b6f0281ebe",
+      "signing": "local Android debug key"
+    },
+    {
+      "path": "/Users/kurban/Documents/Codex/2026-10-09/AiVideoTest-server-onboarding/AiVideoTest-server-onboarding-debug.apk",
+      "bytes": 17673794,
+      "sha256": "297197a60009c29009f4ca2f6b39128a818c19921f92f57091afb6f233e8a3d9",
+      "signing": "local Android debug key"
+    }
+  ],
+  "temporaryEmulator": "5556; user emulator 5554 untouched"
+}
