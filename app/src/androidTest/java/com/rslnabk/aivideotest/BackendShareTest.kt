@@ -2,6 +2,8 @@ package com.rslnabk.aivideotest
 
 import android.app.Instrumentation
 import android.content.Intent
+import android.content.IntentFilter
+import android.os.Build
 import android.graphics.Bitmap
 import android.net.Uri
 import androidx.lifecycle.MutableLiveData
@@ -26,7 +28,9 @@ class BackendShareTest {
         val instrumentation = InstrumentationRegistry.getInstrumentation()
         val context = instrumentation.targetContext
         val hits = AtomicInteger(); val captured = AtomicReference<Intent>()
-        val monitor = object : Instrumentation.ActivityMonitor() {
+        val monitor = if (Build.VERSION.SDK_INT < 26) Instrumentation.ActivityMonitor(
+            IntentFilter(Intent.ACTION_CHOOSER), Instrumentation.ActivityResult(android.app.Activity.RESULT_CANCELED, null), true
+        ) else object : Instrumentation.ActivityMonitor() {
             override fun onStartActivity(intent: Intent): Instrumentation.ActivityResult? {
                 if (intent.action != Intent.ACTION_CHOOSER) return null
                 @Suppress("DEPRECATION")
@@ -58,7 +62,10 @@ class BackendShareTest {
             while (host.model.backendExports.state.value?.phase != ExportPhase.SHARE_READY && System.currentTimeMillis() < until) Thread.sleep(30)
             assertEquals(ExportPhase.SHARE_READY, host.model.backendExports.state.value?.phase)
             activity.scenario.onActivity { it.shareBackendReady(); it.shareBackendReady() }
-            assertEquals(1, hits.get()); assertNull(host.model.backendExports.state.value)
+            assertEquals(1, if (Build.VERSION.SDK_INT < 26) monitor.hits else hits.get()); assertNull(host.model.backendExports.state.value)
+            // The callback that exposes the Intent was added in API 26. Older devices still
+            // exercise and block the real chooser; URI byte/flag checks live in the media tests.
+            if (Build.VERSION.SDK_INT < 26) return
             val send = captured.get(); assertNotNull("Chooser was not opened", send)
             assertEquals(Intent.ACTION_SEND, send.action); assertEquals(if (kind == "video") "video/mp4" else "image/png", send.type)
             assertTrue(send.flags and Intent.FLAG_GRANT_READ_URI_PERMISSION != 0)

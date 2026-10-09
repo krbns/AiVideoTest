@@ -1,0 +1,70 @@
+10-09 14:31:07.010  3377  3377 E AndroidRuntime: FATAL EXCEPTION: main
+10-09 14:31:07.010  3377  3377 E AndroidRuntime: Process: com.rslnabk.aivideotest, PID: 3377
+10-09 14:31:07.010  3377  3377 E AndroidRuntime: java.lang.RuntimeException: Unable to get provider androidx.startup.InitializationProvider: mj1: mj1: java.lang.NoClassDefFoundError: Failed resolution of: Lkotlin/collections/e;
+10-09 14:31:07.010  3377  3377 E AndroidRuntime: 	at android.app.ActivityThread.installProvider(ActivityThread.java:5814)
+10-09 14:31:07.010  3377  3377 E AndroidRuntime: 	at android.app.ActivityThread.installContentProviders(ActivityThread.java:5403)
+10-09 14:31:07.010  3377  3377 E AndroidRuntime: 	at android.app.ActivityThread.handleBindApplication(ActivityThread.java:5342)
+10-09 14:31:07.010  3377  3377 E AndroidRuntime: 	at android.app.ActivityThread.-wrap2(ActivityThread.java)
+10-09 14:31:07.010  3377  3377 E AndroidRuntime: 	at android.app.ActivityThread$H.handleMessage(ActivityThread.java:1528)
+10-09 14:31:07.010  3377  3377 E AndroidRuntime: 	at android.os.Handler.dispatchMessage(Handler.java:102)
+10-09 14:31:07.010  3377  3377 E AndroidRuntime: 	at android.os.Looper.loop(Looper.java:154)
+10-09 14:31:07.010  3377  3377 E AndroidRuntime: 	at android.app.ActivityThread.main(ActivityThread.java:6077)
+10-09 14:31:07.010  3377  3377 E AndroidRuntime: 	at java.lang.reflect.Method.invoke(Native Method)
+10-09 14:31:07.010  3377  3377 E AndroidRuntime: 	at com.android.internal.os.ZygoteInit$MethodAndArgsCaller.run(ZygoteInit.java:866)
+10-09 14:31:07.010  3377  3377 E AndroidRuntime: 	at com.android.internal.os.ZygoteInit.main(ZygoteInit.java:756)
+10-09 14:31:07.010  3377  3377 E AndroidRuntime: Caused by: mj1: mj1: java.lang.NoClassDefFoundError: Failed resolution of: Lkotlin/collections/e;
+10-09 14:31:07.010  3377  3377 E AndroidRuntime: 	at ad.m(r8-map-id-63effe8b5ec30a6735bf8926ba39d99c03db96d18aeb992c5c53b6b99ed7019e:100)
+10-09 14:31:07.010  3377  3377 E AndroidRuntime: 	at ad.l(r8-map-id-63effe8b5ec30a6735bf8926ba39d99c03db96d18aeb992c5c53b6b99ed7019e:86)
+10-09 14:31:07.010  3377  3377 E AndroidRuntime: 	at androidx.startup.InitializationProvider.onCreate(r8-map-id-63effe8b5ec30a6735bf8926ba39d99c03db96d18aeb992c5c53b6b99ed7019e:53)
+10-09 14:31:07.010  3377  3377 E AndroidRuntime: 	at android.content.ContentProvider.attachInfo(ContentProvider.java:1751)
+10-09 14:31:07.010  3377  3377 E AndroidRuntime: 	at android.content.ContentProvider.attachInfo(ContentProvider.java:1726)
+10-09 14:31:07.010  3377  3377 E AndroidRuntime: 	at android.app.ActivityThread.installProvider(ActivityThread.java:5811)
+10-09 14:31:07.010  3377  3377 E AndroidRuntime: 	... 10 more
+10-09 14:31:07.010  3377  3377 E AndroidRuntime: Caused by: mj1: java.lang.NoClassDefFoundError: Failed resolution of: Lkotlin/collections/e;
+10-09 14:31:07.010  3377  3377 E AndroidRuntime: 	at ad.m(r8-map-id-63effe8b5ec30a6735bf8926ba39d99c03db96d18aeb992c5c53b6b99ed7019e:100)
+10-09 14:31:07.010  3377  3377 E AndroidRuntime: 	at ad.m(r8-map-id-63effe8b5ec30a6735bf8926ba39d99c03db96d18aeb992c5c53b6b99ed7019e:78)
+10-09 14:31:07.010  3377  3377 E AndroidRuntime: 	... 15 more
+10-09 14:31:07.010  3377  3377 E AndroidRuntime: Caused by: java.lang.NoClassDefFoundError: Failed resolution of: Lkotlin/collections/e;
+10-09 14:31:07.010  3377  3377 E AndroidRuntime: 	at androidx.lifecycle.ProcessLifecycleInitializer.a(r8-map-id-63effe8b5ec30a6735bf8926ba39d99c03db96d18aeb992c5c53b6b99ed7019e:1)
+10-09 14:31:07.010  3377  3377 E AndroidRuntime: 	at ad.m(r8-map-id-63effe8b5ec30a6735bf8926ba39d99c03db96d18aeb992c5c53b6b99ed7019e:46)
+10-09 14:31:07.010  3377  3377 E AndroidRuntime: 	... 16 more
+10-09 14:31:07.010  3377  3377 E AndroidRuntime: Caused by: java.lang.ClassNotFoundException: kotlin.collections.e
+10-09 14:31:07.010  3377  3377 E AndroidRuntime: 	at java.lang.VMClassLoader.findLoadedClass(Native Method)
+10-09 14:31:07.010  3377  3377 E AndroidRuntime: 	at java.lang.ClassLoader.findLoadedClass(ClassLoader.java:742)
+10-09 14:31:07.010  3377  3377 E AndroidRuntime: 	at java.lang.ClassLoader.loadClass(ClassLoader.java:362)
+10-09 14:31:07.010  3377  3377 E AndroidRuntime: 	at java.lang.ClassLoader.loadClass(ClassLoader.java:312)
+10-09 14:31:07.010  3377  3377 E AndroidRuntime: 	... 18 more
+10-09 14:31:07.010  3377  3377 E AndroidRuntime: Caused by: java.lang.NoClassDefFoundError: Failed resolution of: Lkotlin/collections/k;
+10-09 14:31:07.010  3377  3377 E AndroidRuntime: 	... 18 more
+10-09 14:31:07.010  3377  3377 E AndroidRuntime: Caused by: java.lang.ClassNotFoundException: kotlin.collections.k
+10-09 14:31:07.010  3377  3377 E AndroidRuntime: 	at java.lang.VMClassLoader.findLoadedClass(Native Method)
+10-09 14:31:07.010  3377  3377 E AndroidRuntime: 	at java.lang.ClassLoader.findLoadedClass(ClassLoader.java:742)
+10-09 14:31:07.010  3377  3377 E AndroidRuntime: 	at java.lang.ClassLoader.loadClass(ClassLoader.java:362)
+10-09 14:31:07.010  3377  3377 E AndroidRuntime: 	at java.lang.ClassLoader.loadClass(ClassLoader.java:312)
+10-09 14:31:07.010  3377  3377 E AndroidRuntime: 	... 18 more
+10-09 14:31:07.010  3377  3377 E AndroidRuntime: Caused by: java.lang.NoClassDefFoundError: Failed resolution of: Lkotlin/collections/j;
+10-09 14:31:07.010  3377  3377 E AndroidRuntime: 	... 18 more
+10-09 14:31:07.010  3377  3377 E AndroidRuntime: Caused by: java.lang.ClassNotFoundException: kotlin.collections.j
+10-09 14:31:07.010  3377  3377 E AndroidRuntime: 	at java.lang.VMClassLoader.findLoadedClass(Native Method)
+10-09 14:31:07.010  3377  3377 E AndroidRuntime: 	at java.lang.ClassLoader.findLoadedClass(ClassLoader.java:742)
+10-09 14:31:07.010  3377  3377 E AndroidRuntime: 	at java.lang.ClassLoader.loadClass(ClassLoader.java:362)
+10-09 14:31:07.010  3377  3377 E AndroidRuntime: 	at java.lang.ClassLoader.loadClass(ClassLoader.java:312)
+10-09 14:31:07.010  3377  3377 E AndroidRuntime: 	... 18 more
+10-09 14:31:07.010  3377  3377 E AndroidRuntime: Caused by: java.lang.NoClassDefFoundError: Failed resolution of: Lkotlin/collections/i;
+10-09 14:31:07.010  3377  3377 E AndroidRuntime: 	... 18 more
+10-09 14:31:07.010  3377  3377 E AndroidRuntime: Caused by: java.lang.ClassNotFoundException: kotlin.collections.i
+10-09 14:31:07.010  3377  3377 E AndroidRuntime: 	at java.lang.VMClassLoader.findLoadedClass(Native Method)
+10-09 14:31:07.010  3377  3377 E AndroidRuntime: 	at java.lang.ClassLoader.findLoadedClass(ClassLoader.java:742)
+10-09 14:31:07.010  3377  3377 E AndroidRuntime: 	at java.lang.ClassLoader.loadClass(ClassLoader.java:362)
+10-09 14:31:07.010  3377  3377 E AndroidRuntime: 	at java.lang.ClassLoader.loadClass(ClassLoader.java:312)
+10-09 14:31:07.010  3377  3377 E AndroidRuntime: 	... 18 more
+10-09 14:31:07.010  3377  3377 E AndroidRuntime: Caused by: java.lang.NoClassDefFoundError: Failed resolution of: Lfl;
+10-09 14:31:07.010  3377  3377 E AndroidRuntime: 	... 18 more
+10-09 14:31:07.010  3377  3377 E AndroidRuntime: Caused by: java.lang.ClassNotFoundException: fl
+10-09 14:31:07.010  3377  3377 E AndroidRuntime: 	at java.lang.VMClassLoader.findLoadedClass(Native Method)
+10-09 14:31:07.010  3377  3377 E AndroidRuntime: 	at java.lang.ClassLoader.findLoadedClass(ClassLoader.java:742)
+10-09 14:31:07.010  3377  3377 E AndroidRuntime: 	at java.lang.ClassLoader.loadClass(ClassLoader.java:362)
+10-09 14:31:07.010  3377  3377 E AndroidRuntime: 	at java.lang.ClassLoader.loadClass(ClassLoader.java:312)
+10-09 14:31:07.010  3377  3377 E AndroidRuntime: 	... 18 more
+10-09 14:31:07.010  3377  3377 E AndroidRuntime: Caused by: java.lang.IllegalAccessError: Class kotlin.collections.h extended by class fl is inaccessible (declaration of 'fl' appears in /data/app/com.rslnabk.aivideotest-2/base.apk)
+10-09 14:31:07.010  3377  3377 E AndroidRuntime: 	... 18 more

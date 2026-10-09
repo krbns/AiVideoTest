@@ -8,7 +8,7 @@ enum class BackendSection(val path: String) {
     PROFILE("/v1/profile"), PRODUCTS("/v1/tokens/products"), JOBS("/v1/media/jobs?limit=20")
 }
 data class AuthSession(val userId: String, val deviceId: String, val accessToken: String,
-    val refreshToken: String, val expiresAt: Long, val refreshExpiresAt: Long) {
+    val refreshToken: String, val expiresAt: Long, val refreshExpiresAt: Long, val refreshPending: Boolean = false) {
     override fun toString() = "AuthSession(userId=" + userId + ", credentials=[redacted])"
 }
 data class RemoteTemplate(val id: String, val title: String, val cover: String?, val videoCover: String?,

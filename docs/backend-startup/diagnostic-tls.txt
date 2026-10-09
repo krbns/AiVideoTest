@@ -1,0 +1,64 @@
+Before compatibility configuration: public OpenAPI GET failed.
+INSTRUMENTATION_STATUS: numtests=4
+INSTRUMENTATION_STATUS: stream=
+com.rslnabk.aivideotest.TemporaryTlsProbeTest:
+INSTRUMENTATION_STATUS: id=AndroidJUnitRunner
+INSTRUMENTATION_STATUS: test=inspectPublicSpecTls
+INSTRUMENTATION_STATUS: class=com.rslnabk.aivideotest.TemporaryTlsProbeTest
+INSTRUMENTATION_STATUS: current=1
+INSTRUMENTATION_STATUS_CODE: 1
+INSTRUMENTATION_STATUS: numtests=4
+INSTRUMENTATION_STATUS: stream=
+Error in inspectPublicSpecTls(com.rslnabk.aivideotest.TemporaryTlsProbeTest):
+javax.net.ssl.SSLHandshakeException: java.security.cert.CertPathValidatorException: Trust anchor for certification path not found.
+	at com.android.org.conscrypt.OpenSSLSocketImpl.startHandshake(OpenSSLSocketImpl.java:361)
+	at com.android.okhttp.Connection.connectTls(Connection.java:235)
+	at com.android.okhttp.Connection.connectSocket(Connection.java:199)
+	at com.android.okhttp.Connection.connect(Connection.java:172)
+	at com.android.okhttp.Connection.connectAndSetOwner(Connection.java:367)
+	at com.android.okhttp.OkHttpClient$1.connectAndSetOwner(OkHttpClient.java:130)
+	at com.android.okhttp.internal.http.HttpEngine.connect(HttpEngine.java:329)
+	at com.android.okhttp.internal.http.HttpEngine.sendRequest(HttpEngine.java:246)
+	at com.android.okhttp.internal.huc.HttpURLConnectionImpl.execute(HttpURLConnectionImpl.java:457)
+	at com.android.okhttp.internal.huc.HttpURLConnectionImpl.getResponse(HttpURLConnectionImpl.java:405)
+	at com.android.okhttp.internal.huc.HttpURLConnectionImpl.getResponseCode(HttpURLConnectionImpl.java:521)
+	at com.android.okhttp.internal.huc.DelegatingHttpsURLConnection.getResponseCode(DelegatingHttpsURLConnection.java:105)
+	at com.android.okhttp.internal.huc.HttpsURLConnectionImpl.getResponseCode(HttpsURLConnectionImpl.java)
+	at com.rslnabk.aivideotest.TemporaryTlsProbeTest.inspectPublicSpecTls(TemporaryTlsProbeTest.kt:11)
+	... 31 trimmed
+Caused by: java.security.cert.CertificateException: java.security.cert.CertPathValidatorException: Trust anchor for certification path not found.
+	at com.android.org.conscrypt.TrustManagerImpl.checkTrustedRecursive(TrustManagerImpl.java:549)
+	at com.android.org.conscrypt.TrustManagerImpl.checkTrustedRecursive(TrustManagerImpl.java:508)
+	at com.android.org.conscrypt.TrustManagerImpl.checkTrustedRecursive(TrustManagerImpl.java:508)
+	at com.android.org.conscrypt.TrustManagerImpl.checkTrusted(TrustManagerImpl.java:401)
+	at com.android.org.conscrypt.TrustManagerImpl.checkTrusted(TrustManagerImpl.java:375)
+	at com.android.org.conscrypt.TrustManagerImpl.getTrustedChainForServer(TrustManagerImpl.java:304)
+	at android.security.net.config.NetworkSecurityTrustManager.checkServerTrusted(NetworkSecurityTrustManager.java:94)
+	at android.security.net.config.RootTrustManager.checkServerTrusted(RootTrustManager.java:88)
+	at com.android.org.conscrypt.Platform.checkServerTrusted(Platform.java:178)
+	at com.android.org.conscrypt.OpenSSLSocketImpl.verifyCertificateChain(OpenSSLSocketImpl.java:596)
+	at com.android.org.conscrypt.NativeCrypto.SSL_do_handshake(Native Method)
+	at com.android.org.conscrypt.OpenSSLSocketImpl.startHandshake(OpenSSLSocketImpl.java:357)
+	... 45 more
+Caused by: java.security.cert.CertPathValidatorException: Trust anchor for certification path not found.
+	... 57 more
+
+
+After compatibility configuration: public OpenAPI GET passed.
+INSTRUMENTATION_STATUS: numtests=4
+INSTRUMENTATION_STATUS: stream=
+com.rslnabk.aivideotest.TemporaryTlsProbeTest:
+INSTRUMENTATION_STATUS: id=AndroidJUnitRunner
+INSTRUMENTATION_STATUS: test=inspectPublicSpecTls
+INSTRUMENTATION_STATUS: class=com.rslnabk.aivideotest.TemporaryTlsProbeTest
+INSTRUMENTATION_STATUS: current=1
+INSTRUMENTATION_STATUS_CODE: 1
+INSTRUMENTATION_STATUS: numtests=4
+INSTRUMENTATION_STATUS: stream=.
+INSTRUMENTATION_STATUS: id=AndroidJUnitRunner
+INSTRUMENTATION_STATUS: test=inspectPublicSpecTls
+INSTRUMENTATION_STATUS: class=com.rslnabk.aivideotest.TemporaryTlsProbeTest
+INSTRUMENTATION_STATUS: current=1
+INSTRUMENTATION_STATUS_CODE: 0
+INSTRUMENTATION_STATUS: numtests=4
+INSTRUMENTATION_STATUS: stream=

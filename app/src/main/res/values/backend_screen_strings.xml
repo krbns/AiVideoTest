@@ -1,4 +1,5 @@
 <resources>
+    <string name="backend_refresh_uncertain">Your session could not be restored. Reconnect to continue with the same account. Saved creations are kept.</string>
     <string name="backend_try_effect">Try this effect</string>
     <string name="backend_effect_details_hint">Scroll for effect details</string>
     <string name="backend_job_failed">Failed</string>

@@ -274,7 +274,7 @@ internal val BackendState.balanceCached: Boolean get() =
         }
         state.authError?.let { error ->
             BackendFailureText(error)
-            DsButton(stringResource(R.string.refresh)) { refresh(error.status == 401) }
+            DsButton(stringResource(if (error.status == 401) R.string.backend_reconnect else R.string.refresh)) { refresh(error.status == 401) }
             if (BuildConfig.DEBUG) DsButton(stringResource(R.string.backend_back_demo), onClick = demo)
         }
         if (state.cached.isNotEmpty()) Text(stringResource(R.string.backend_saved_data), style = Ds.type.caption1Regular, color = Ds.colors.labelTertiary)
@@ -353,6 +353,7 @@ internal fun LazyListScope.remoteStatus(state: BackendState, section: BackendSec
 }
 @Composable internal fun BackendFailureText(error: BackendFailure, modifier: Modifier = Modifier) {
     val message = when {
+        error.code == "refresh_uncertain" -> R.string.backend_refresh_uncertain
         error.status == 401 -> R.string.backend_session_expired
         error.status == 403 -> R.string.backend_access_restricted
         error.status == 429 -> R.string.backend_rate_limited

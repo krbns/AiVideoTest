@@ -26,6 +26,7 @@ class PhotoGenerationController(private val context: Context, private val backen
     private var user: String? = null
     private var jobJson: JSONObject? = null
     private var polling: ScheduledFuture<*>? = null
+    private var pollEpoch = 0
     private var visible = false
     @Volatile private var closed = false
     private var pollFailures = 0
@@ -44,7 +45,7 @@ class PhotoGenerationController(private val context: Context, private val backen
         schedulePoll(0)
         if (mutableState.value!!.phase == PhotoPhase.UNKNOWN && !mutableState.value!!.recovery.searched) searchRecovery()
     }
-    fun pause() { visible = false; polling?.cancel(false); polling = null }
+    fun pause() { visible = false; pollEpoch++; polling?.cancel(false); polling = null }
     private fun publish(value: PhotoState, persist: Boolean = true) {
         if (persist && user != null) journal.save(user!!, PhotoJournal.encode(value.draft, value.phase, jobJson, value.submission))
         mutableState.value = value
@@ -244,6 +245,7 @@ class PhotoGenerationController(private val context: Context, private val backen
     }
     fun refreshJob() { pollFailures = 0; schedulePoll(0, force = true) }
     private fun schedulePoll(delay: Long, force: Boolean = false) {
+        val cycle = ++pollEpoch
         polling?.cancel(false); polling = null
         val current = mutableState.value!!; val account = user ?: return
         if (!visible || closed || current.actionBusy || backend.source.value != DataSource.SERVER) return
@@ -257,7 +259,7 @@ class PhotoGenerationController(private val context: Context, private val backen
                 json to job
             } }
             main.post {
-                if (closed || user != account) return@post
+                if (closed || !visible || user != account || cycle != pollEpoch) return@post
                 var state = mutableState.value!!; var terminal = false; var hardFailure = false
                 results.forEach { (id, result) -> result.fold({ (json, job) ->
                     pollFailures = 0

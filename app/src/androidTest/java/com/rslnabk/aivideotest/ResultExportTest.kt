@@ -39,7 +39,7 @@ class ResultExportTest : ComposeFlowTest() {
             val file=File(context.cacheDir,"export-test-${job.id}")
             try {
                 gallery=media.gallery(job,{})
-                val bytes=context.contentResolver.openInputStream(gallery)!!.use { it.readBytes() }
+                val bytes=GalleryProbe.read(context, gallery)
                 if (kind==MediaKind.PHOTO) {
                     assertEquals(0xff,bytes[0].toInt() and 0xff);assertEquals(0xd8,bytes[1].toInt() and 0xff)
                     val bitmap=BitmapFactory.decodeByteArray(bytes,0,bytes.size);assertNotNull(bitmap);bitmap.recycle()
@@ -67,8 +67,7 @@ class ResultExportTest : ComposeFlowTest() {
         try {
             assertThrows(Exception::class.java) { media.gallery(job(MediaKind.PHOTO),{inserted=it},true) }
             assertNotNull(inserted)
-            context.contentResolver.query(MediaStore.Images.Media.EXTERNAL_CONTENT_URI,arrayOf(MediaStore.MediaColumns._ID),
-                "${MediaStore.MediaColumns._ID} = ?",arrayOf(ContentUris.parseId(inserted!!).toString()),null)!!.use { assertEquals(0,it.count) }
+            assertFalse(GalleryProbe.exists(context, inserted!!))
         } finally { inserted?.let { runCatching { context.contentResolver.delete(it,null,null) } } }
     }
     @Test fun saveErrorRefreshSuccessAndFileChoiceRotationCancellation() {

@@ -60,7 +60,7 @@ internal class VideoFixture(val context: Context) : AutoCloseable {
     fun waitFor(test: () -> Boolean) {
         val until = System.currentTimeMillis() + 10000
         while (!test() && System.currentTimeMillis() < until) Thread.sleep(40)
-        assertTrue("Video state did not settle", test())
+        assertTrue("Video state did not settle: " + (if (::controller.isInitialized) controller.state.value?.let { "${it.phase}/${it.failure?.code}" } else "catalog"), test())
     }
     fun start() {
         context.getSharedPreferences("backend_source_v1", 0).edit().clear().commit()
@@ -197,7 +197,7 @@ class BackendVideoFlowTest {
             assertEquals(local.file, media.load(f.user, job.copy(assets = job.assets.map { it.copy(expiresAt = "2000-01-01T00:00:00Z") })).file); assertEquals(1, count.get())
             val exports = ResultMedia(context); val share = exports.share(local.export(job.id)); assertArrayEquals(bytes, context.contentResolver.openInputStream(share)!!.use { it.readBytes() })
             val gallery = exports.gallery(local.export(job.id), {})
-            try { assertArrayEquals(bytes, context.contentResolver.openInputStream(gallery)!!.use { it.readBytes() }) } finally { context.contentResolver.delete(gallery, null, null) }
+            try { assertArrayEquals(bytes, GalleryProbe.read(context, gallery)) } finally { context.contentResolver.delete(gallery, null, null) }
         } finally { local.file.delete(); local.poster?.delete() }
     }
     @Test fun expiredOrNonVideoResultNeverBecomesPlayable() {

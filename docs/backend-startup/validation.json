@@ -1,0 +1,173 @@
+{
+  "date": "2026-10-09",
+  "base_commit": "e989707",
+  "committed": true,
+  "ui": "Jetpack Compose",
+  "build": {
+    "debug": "passed",
+    "android_test": "passed",
+    "release_full_r8": "passed",
+    "unit": {
+      "tests": 35,
+      "failures": 0,
+      "errors": 0,
+      "skipped": 0
+    },
+    "lint": {
+      "errors": 0,
+      "warnings": 53,
+      "hints": 2
+    }
+  },
+  "android": [
+    {
+      "api": 24,
+      "passed": 60,
+      "failures": 0,
+      "log": "tests-24-verified.log"
+    },
+    {
+      "api": 28,
+      "passed": 60,
+      "failures": 0,
+      "log": "tests-28-verified.log"
+    },
+    {
+      "api": 36,
+      "passed": 123,
+      "failures": 0,
+      "log": "tests-36-verified.log"
+    }
+  ],
+  "final_test_fixture": {
+    "change": "Media bridge tests seed empty demo preferences before ActivityScenario so old Android does not decode unrelated demo catalog bitmaps during recreation. Main APK unchanged.",
+    "api24_and_28": "60 tests each include final fixture",
+    "api36": "Full 123 passed; final isolated media fixture additionally passed 3/3",
+    "log": "media-36-verified.log"
+  },
+  "native": {
+    "release_tested_on": [
+      24,
+      28,
+      36
+    ],
+    "automatic_server_start": true,
+    "account_survives_cold_start_on": [
+      24,
+      28,
+      36
+    ],
+    "camera_full_capture_import_and_cold_restore_api": 24,
+    "system_photo_picker_and_cancel_on": [
+      28,
+      36
+    ],
+    "cold_offline_cached_account_and_foreground_reconnection_api": 36,
+    "test_accounts": [
+      {
+        "api": 24,
+        "accountId": "3573-6471-YFGVU",
+        "balance": 0
+      },
+      {
+        "api": 28,
+        "accountId": "0163-7780-U2VJK",
+        "balance": 0
+      },
+      {
+        "api": 36,
+        "accountId": "3519-6703-LNG7A",
+        "balance": 0
+      }
+    ],
+    "paid_generations": 0,
+    "purchases": 0,
+    "server_job_deletions": 0,
+    "media_sent_to_recipients": 0,
+    "note": "Old API24 AVD svc wifi command exited137; native offline verification used API36. Controlled expired/offline/cache cases passed on all three APIs."
+  },
+  "spec": {
+    "file": "../backend/benvilo-openapi-2026-10-09.json",
+    "sha256": "f8f5d1af522e8e4db37f5de13da97a3f6ecc11274bf861551866326130725352"
+  },
+  "apk": [
+    {
+      "path": "/Users/kurban/Documents/Codex/2026-10-09/AiVideoTest-server-startup/AiVideoTest-server-debug.apk",
+      "bytes": 18237283,
+      "sha256": "734f537643931259af067242167269f926abf80dfed42fb87f9fd40619016535",
+      "variant": "debug",
+      "signing": "local Android debug key; not a production distribution signature"
+    },
+    {
+      "path": "/Users/kurban/Documents/Codex/2026-10-09/AiVideoTest-server-startup/AiVideoTest-server-release-local.apk",
+      "bytes": 6386042,
+      "sha256": "45511038805b3caeaea44e5380aeb13baa691511c3f82c8d6333371809934dfb",
+      "variant": "release",
+      "signing": "local Android debug key; not a production distribution signature"
+    }
+  ],
+  "screens": [
+    {
+      "file": "screens/api24-final-account.png",
+      "sha256": "952ac1a8365a3e082bde21250fe67790119a5b990d55a4a9b5269422c1e03b45"
+    },
+    {
+      "file": "screens/api24-final-camera-restored.png",
+      "sha256": "12e644af7928709b7beae861dd0a9164ddefc9eb60f5f26ba9ac91498f42ac87"
+    },
+    {
+      "file": "screens/api24-final-release-cold-start.png",
+      "sha256": "b970ba157e862c9bd9e50c992e144a0bfcc595af8f7351cc3a9bd2288463debf"
+    },
+    {
+      "file": "screens/api28-account-cold-restored.png",
+      "sha256": "91412976bc3277df1f716cc9653d15bae61e066aabff8cb486e1cd1d30361f15"
+    },
+    {
+      "file": "screens/api28-picker-cancelled.png",
+      "sha256": "c91574deb79fc5ade93d8b550470e06e77c0b3a8c19f67c5c3dea70a4aeaa210"
+    },
+    {
+      "file": "screens/api28-release-cold-restored.png",
+      "sha256": "14db0ffe09ec472555c26c4a95bebf5bcc8bb0e4cb9631c0e851140fba210b61"
+    },
+    {
+      "file": "screens/api28-release-server-ready.png",
+      "sha256": "9beccbbbf596ae5e6db1d2f1b6caeea4819a0a1aa6591503c20ad60bb70bb4c0"
+    },
+    {
+      "file": "screens/api28-system-photo-picker.png",
+      "sha256": "a5dc7cdd9f46ad5175256fcc09bfa50ce8879daa0b7e4eb0721573951a0937e7"
+    },
+    {
+      "file": "screens/api36-account-offline.png",
+      "sha256": "4dd99ee3d7b5db42ce35d110a98f166ef9be809ad6a0799cd4b250710c39dfcc"
+    },
+    {
+      "file": "screens/api36-account-reconnected.png",
+      "sha256": "2fc56275c733e0294655cf74ed5818ba8f71a197c1a22ec8e08866e7bf0fd872"
+    },
+    {
+      "file": "screens/api36-offline-cold-launch.png",
+      "sha256": "fe977a9e8e533b243a86e8776fec93de4a44772c430b34aa7d816727674b5021"
+    },
+    {
+      "file": "screens/api36-picker-cancelled.png",
+      "sha256": "c2026e2841f04ecc9e3e7f667365241d44b104dc07e54f9e1a1ba0d2a4003439"
+    },
+    {
+      "file": "screens/api36-release-server-ready.png",
+      "sha256": "c69fe4505fdb68d6f50a50fe3f3ad11edad72fcf0071457cdf938bad8b9e0807"
+    },
+    {
+      "file": "screens/api36-system-photo-picker.png",
+      "sha256": "3aa4d84ac52373000c014b995e9d8f703f9d15d95aa2ca209dfde5b297f42d6d"
+    }
+  ],
+  "limits": [
+    "Physical device and API37 not tested.",
+    "Payments/Adapty, FCM, support/legal contracts and licensed SF Pro remain deferred.",
+    "Same-install identity restoration does not implement account transfer after uninstall or to another device."
+  ],
+  "changed_files_count": 64
+}

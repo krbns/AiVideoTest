@@ -111,6 +111,7 @@ class MainActivity : ComponentActivity() {
     }
     override fun onResume() {
         super.onResume(); model.refreshNotifications(); model.refreshCache()
+        model.backend.onForeground()
         if (model.backend.source.value == com.rslnabk.aivideotest.data.backend.DataSource.SERVER)
             { model.backendPhotos.activate(model.backend.state.value?.userId); model.backendVideos.activate(model.backend.state.value?.userId) }
     }

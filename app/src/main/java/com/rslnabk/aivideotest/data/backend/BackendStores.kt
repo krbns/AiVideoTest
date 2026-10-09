@@ -43,11 +43,11 @@ class EncryptedBackendAuthStore(context: Context, prefsName: String = "backend_a
     @Synchronized override fun deviceId(): String = protected { read().getString("deviceId") }
     @Synchronized override fun load(): AuthSession? = protected {
         val value = read(); if (!value.has("accessToken")) null else AuthSession(value.getString("userId"), value.getString("deviceId"),
-            value.getString("accessToken"), value.getString("refreshToken"), value.getLong("expiresAt"), value.getLong("refreshExpiresAt"))
+            value.getString("accessToken"), value.getString("refreshToken"), value.getLong("expiresAt"), value.getLong("refreshExpiresAt"), value.optBoolean("refreshPending"))
     }
     @Synchronized override fun save(session: AuthSession) = protected {
         write(JSONObject().put("userId", session.userId).put("deviceId", session.deviceId).put("accessToken", session.accessToken)
-            .put("refreshToken", session.refreshToken).put("expiresAt", session.expiresAt).put("refreshExpiresAt", session.refreshExpiresAt))
+            .put("refreshToken", session.refreshToken).put("expiresAt", session.expiresAt).put("refreshExpiresAt", session.refreshExpiresAt).put("refreshPending", session.refreshPending))
     }
     private inline fun <T> protected(block: () -> T): T = try { block() } catch (_: Exception) { throw BackendFailure(code = "session_storage") }
 }

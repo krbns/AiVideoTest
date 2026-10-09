@@ -88,7 +88,7 @@ class BackendPhotoFlowTest {
             val exporter = ResultMedia(context); val uri = exporter.share(local.export(job.id))
             assertArrayEquals(original, context.contentResolver.openInputStream(uri)!!.use { it.readBytes() })
             val gallery = exporter.gallery(local.export(job.id), {})
-            try { assertArrayEquals(original, context.contentResolver.openInputStream(gallery)!!.use { it.readBytes() }) }
+            try { assertArrayEquals(original, GalleryProbe.read(context, gallery)) }
             finally { context.contentResolver.delete(gallery, null, null) }
         } finally { local.file.delete() }
     }
