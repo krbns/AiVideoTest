@@ -1,0 +1,257 @@
+{
+  "date": "2026-10-09",
+  "base_commit": "4244b0d",
+  "ui": "Jetpack Compose",
+  "committed": true,
+  "build": {
+    "debug": "passed",
+    "android_test": "passed",
+    "release": "passed",
+    "log": "validation-delivery-refund.log"
+  },
+  "unit": {
+    "tests": 35,
+    "failures": 0,
+    "errors": 0,
+    "skipped": 0
+  },
+  "lint": {
+    "errors": 0,
+    "warnings": 53,
+    "hints": 2
+  },
+  "android": {
+    "api": 34,
+    "regression": {
+      "passed": 44,
+      "seconds": 282.618,
+      "apk_sha256": "757f3db1fa4870b4fbfb367ead7c8cfa01a8e1d632b83a326794a2742d3b1474",
+      "log": "ui-regression-final.log"
+    },
+    "final_photo_ui": {
+      "passed": 5,
+      "seconds": 26.819,
+      "apk_sha256": "4251fe2c4d649512e3982c408d0a453467acbc357ed12fc6fd24aa68ed9d15f2",
+      "log": "ui-photo-final-status.log"
+    },
+    "note": "Full regression passed before one final presentation change: recovery candidates now use the already-tested server refund status. Final photo/recovery UI verified again on the delivered APK."
+  },
+  "native": {
+    "reference_phone_dp": [
+      390,
+      844
+    ],
+    "compact_phone_dp": [
+      320,
+      640
+    ],
+    "font_scales": [
+      1.0,
+      2.0
+    ],
+    "landscape_dp": [
+      640,
+      320
+    ],
+    "keyboard_checked": true,
+    "screens": [
+      {
+        "file": "screens/01-video-trends.png",
+        "pixels": [
+          780,
+          1688
+        ],
+        "sha256": "8ee6f5d8f04d4655d50d8592d3ba3388852b12bdcbf16884018f37e054b6f7c4"
+      },
+      {
+        "file": "screens/02-category.png",
+        "pixels": [
+          780,
+          1688
+        ],
+        "sha256": "22dc5bc26bdebfac8b235e227fe1a951f3cab5b7b0b448c02b786faf5eb9cd9a"
+      },
+      {
+        "file": "screens/03-photo-prompt.png",
+        "pixels": [
+          780,
+          1688
+        ],
+        "sha256": "b2c587203e57c69437697dd1393b40004dfc03c4f6a1ca98aa50b4ff4247c178"
+      },
+      {
+        "file": "screens/04-video-prompt.png",
+        "pixels": [
+          780,
+          1688
+        ],
+        "sha256": "bd61c941679588f4090bbc062a305c19284c3d1bc61a8beb1a578f66749f697a"
+      },
+      {
+        "file": "screens/05-video-keyboard.png",
+        "pixels": [
+          780,
+          1688
+        ],
+        "sha256": "5b553de6942611354600b00bada453ae3c059038e3039b16c00bf7f742ce590f"
+      },
+      {
+        "file": "screens/06-settings.png",
+        "pixels": [
+          780,
+          1688
+        ],
+        "sha256": "05c7db1466952c383c3029fe51aaa051b6a06bcbc8231d298134b06ea314ef97"
+      },
+      {
+        "file": "screens/07-account.png",
+        "pixels": [
+          780,
+          1688
+        ],
+        "sha256": "52d552f9696b03b5fe1f7fbd66d2c4202269a6376e59fc55494981edce4db36f"
+      },
+      {
+        "file": "screens/08-clear-cache.png",
+        "pixels": [
+          780,
+          1688
+        ],
+        "sha256": "d885a726e7c9313e3f86cd13bd2653b5e0aceb8e3952bf83d69ca25ddd3870d0"
+      },
+      {
+        "file": "screens/09-terms-unavailable.png",
+        "pixels": [
+          780,
+          1688
+        ],
+        "sha256": "2345f399d925d71d3233684bd026f959ef1551197c7ef27e8f37baff60938c1e"
+      },
+      {
+        "file": "screens/10-settings-bottom.png",
+        "pixels": [
+          780,
+          1688
+        ],
+        "sha256": "56ba5ec4e59b24f665f4e32b0cba87fbba17905c03e8187aa74078c6c21c760c"
+      },
+      {
+        "file": "screens/11-video-library.png",
+        "pixels": [
+          780,
+          1688
+        ],
+        "sha256": "73335ff2cf52be53e7550cbeb1a4145bbd74f1ea9501d5fd7f51cc9d4fa19b78"
+      },
+      {
+        "file": "screens/12-video-result.png",
+        "pixels": [
+          780,
+          1688
+        ],
+        "sha256": "300007c19f374652d737da58703415fc40d2e73f3fb9685e5766c6033b2673c7"
+      },
+      {
+        "file": "screens/13-result-menu.png",
+        "pixels": [
+          780,
+          1688
+        ],
+        "sha256": "dac843c5fcc45d466038a6e0e17cb28f4251b46077c533050beb52ad0aaacf1f"
+      },
+      {
+        "file": "screens/14-effect.png",
+        "pixels": [
+          780,
+          1688
+        ],
+        "sha256": "111d261e384e03fb3370f86cb12cbfc71a88652ddd30ba77686abc692cc7a8fe"
+      },
+      {
+        "file": "screens/15-instruction.png",
+        "pixels": [
+          780,
+          1688
+        ],
+        "sha256": "1152835ea7f1b437aa7092f9051c351b02c9437399685f915d35b5c67c96b31d"
+      },
+      {
+        "file": "screens/16-effect-editor.png",
+        "pixels": [
+          780,
+          1688
+        ],
+        "sha256": "927541817264af95f1aaa27e844688979fd1111a11f056b4ac83a4a6a2332e07"
+      },
+      {
+        "file": "screens/17-favorites.png",
+        "pixels": [
+          780,
+          1688
+        ],
+        "sha256": "864c7a2827158bfc38f49c2a1d15c7e92ee56952004ac691f3b68f74d1130c95"
+      },
+      {
+        "file": "screens/18-compact-200-header.png",
+        "pixels": [
+          640,
+          1280
+        ],
+        "sha256": "09537f1398659323398f9397f95b3e7a6f98f930d3975e6d1ba729b78a60f4d3"
+      },
+      {
+        "file": "screens/19-compact-200-keyboard.png",
+        "pixels": [
+          640,
+          1280
+        ],
+        "sha256": "09ea33307035156b8622679b8d54beeb027b9ef5022251135317fd21439020c9"
+      },
+      {
+        "file": "screens/20-compact-200-controls.png",
+        "pixels": [
+          640,
+          1280
+        ],
+        "sha256": "323f20fca1ffb73eb3f636ee298b20d9448375c4e4d6c0d748d871439d067ac4"
+      },
+      {
+        "file": "screens/21-landscape-keyboard.png",
+        "pixels": [
+          1280,
+          640
+        ],
+        "sha256": "878cc570cd0cf555cc1ee630e855401ee2e011056a00ac303ff221e57db38f50"
+      },
+      {
+        "file": "screens/22-landscape-counter.png",
+        "pixels": [
+          1280,
+          640
+        ],
+        "sha256": "2c0c3bcb724b46dd9e49ac5fd8dba850ca8b80696ce2d1409a2c287a9d9e3f4c"
+      }
+    ]
+  },
+  "live_test_account": {
+    "accountId": "3932-4600-T6F54",
+    "balance": 48,
+    "video_templates": 41,
+    "photo_templates": 35,
+    "history_jobs": 3,
+    "new_generations": 0
+  },
+  "apk": {
+    "file": "AiVideoTest-backend-screens.apk",
+    "bytes": 18236475,
+    "sha256": "4251fe2c4d649512e3982c408d0a453467acbc357ed12fc6fd24aa68ed9d15f2",
+    "signature_v2_verified": true,
+    "variant": "debug"
+  },
+  "limits": [
+    "API 24–28, API 36 and physical device were not retested.",
+    "Payments/restore, FCM and support/legal endpoints remain deferred.",
+    "SF Pro is not embedded; existing Android Sans Serif fallback remains."
+  ],
+  "changed_files_count": 23
+}

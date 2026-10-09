@@ -79,9 +79,11 @@ class BackendUiTest : ComposeFlowTest() {
         ActivityScenario.launch(MainActivity::class.java).use { scenario ->
             scenario.onActivity { host -> host.setContent { AiVideoTheme { BackendWorkspace(state, {}, {}, {}, {}) } } }
             tag("remote_template_real-id").performScrollTo().performClick()
-            ui.onNodeWithText(context.getString(R.string.backend_reference_count, 3)).performScrollTo().assertIsDisplayed()
-            tag("backend_generate").performScrollTo().assertIsNotEnabled()
-            ui.onNodeWithText(context.getString(R.string.backend_credits, 17)).performScrollTo().assertIsDisplayed()
+            tag("backend_detail_list").performScrollToNode(hasText(context.getString(R.string.backend_reference_count, 3)))
+            ui.onNodeWithText(context.getString(R.string.backend_reference_count, 3)).assertIsDisplayed()
+            tag("backend_generate").assertIsDisplayed().assertIsNotEnabled()
+            tag("backend_detail_list").performScrollToNode(hasText(context.getString(R.string.backend_credits, 17)))
+            ui.onNodeWithText(context.getString(R.string.backend_credits, 17)).assertIsDisplayed()
         }
     }
     @Test fun cachedBalanceIsMarkedAndRemoteHistoryLoadsMoreWithoutDemoJobs() {

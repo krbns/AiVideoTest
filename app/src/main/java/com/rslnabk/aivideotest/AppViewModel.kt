@@ -36,6 +36,10 @@ class AppViewModel(application: Application) : AndroidViewModel(application) {
     val cacheBytes = MutableLiveData(0L)
     val cacheBusy = MutableLiveData(false)
     val cacheResult = MutableLiveData<Boolean?>(null)
+    private val backendCache = PreviewCache(application.cacheDir, listOf("previews", "backend_read"))
+    val backendCacheBytes = MutableLiveData(0L)
+    val backendCacheBusy = MutableLiveData(false)
+    val backendCacheResult = MutableLiveData<Boolean?>(null)
     var failNextCache = false
     @Volatile private var disposed = false
     var failNextPhoto = false
@@ -95,6 +99,22 @@ class AppViewModel(application: Application) : AndroidViewModel(application) {
         worker.execute { val bytes = runCatching(cache::bytes).getOrDefault(0); handler.post { if (!disposed) cacheBytes.value = bytes } }
     }
     fun acknowledgeCache() { cacheResult.value = null }
+    fun refreshBackendCache() {
+        if (backendCacheBusy.value == true) return
+        worker.execute { val bytes = runCatching(backendCache::bytes).getOrDefault(0); handler.post { if (!disposed) backendCacheBytes.value = bytes } }
+    }
+    fun acknowledgeBackendCache() { backendCacheResult.value = null }
+    fun clearBackendCache() {
+        if (backendCacheBusy.value == true || backend.state.value?.let { it.connecting || it.loading.isNotEmpty() } == true) return
+        backendCacheBusy.value = true; backendCacheResult.value = null
+        worker.execute {
+            val result = runCatching { backendCache.clear(); backendCache.bytes() }
+            handler.post { if (!disposed) {
+                backendCacheBytes.value = result.getOrDefault(backendCacheBytes.value ?: 0)
+                backendCacheBusy.value = false; backendCacheResult.value = result.isSuccess
+            } }
+        }
+    }
     fun clearCache() {
         if (cacheBusy.value == true) return
         val fail = failNextCache; failNextCache = false; cacheBusy.value = true; cacheResult.value = null

@@ -139,7 +139,7 @@ private fun LazyListScope.effectGrid(effects: List<Effect>, snapshot: DemoSnapsh
             if (liked) Ds.colors.accentPrimary else Ds.colors.labelPrimary) { model.toggleFavorite(effect.id) }
     }
 }
-@Composable private fun BoxScope.CardTitle(title: String) {
+@Composable internal fun BoxScope.CardTitle(title: String) {
     Box(Modifier.align(Alignment.BottomCenter).fillMaxWidth().height(64.dp)
         .background(Brush.verticalGradient(listOf(Color.Transparent, Ds.colors.backgroundPrimaryAlpha))))
     Text(title, Modifier.align(Alignment.BottomStart).padding(start = 12.dp, end = 12.dp, bottom = 14.dp), color = Ds.colors.labelPrimary,
@@ -165,7 +165,7 @@ private fun LazyListScope.effectGrid(effects: List<Effect>, snapshot: DemoSnapsh
         }
     }
 }
-@Composable private fun EmptyPanel(image: Int, title: Int, body: Int, action: Int, onClick: () -> Unit) {
+@Composable internal fun EmptyPanel(image: Int, title: Int, body: Int, action: Int, onClick: () -> Unit) {
     Column(Modifier.fillMaxWidth().padding(horizontal = 32.dp, vertical = 48.dp), horizontalAlignment = Alignment.CenterHorizontally,
         verticalArrangement = Arrangement.spacedBy(20.dp)) {
         Image(painterResource(image), null, Modifier.size(220.dp, 240.dp), contentScale = ContentScale.Fit)

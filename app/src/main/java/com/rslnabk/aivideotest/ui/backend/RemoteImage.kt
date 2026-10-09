@@ -26,6 +26,8 @@ private object CoverImages {
     private val images = object : LruCache<String, Bitmap>(12 * 1024 * 1024) {
         override fun sizeOf(key: String, value: Bitmap) = value.allocationByteCount
     }
+    fun bytes() = images.size().toLong()
+    fun clear() { images.evictAll() }
     suspend fun load(value: String): Bitmap? {
         images.get(value)?.let { return it }
         return permits.withPermit { withContext(Dispatchers.IO) {
@@ -57,6 +59,8 @@ private object CoverImages {
         } }
     }
 }
+internal fun remoteCoverCacheBytes() = CoverImages.bytes()
+internal fun clearRemoteCoverCache() = CoverImages.clear()
 @Composable fun RemoteImage(url: String?, modifier: Modifier = Modifier) {
     val bitmap by produceState<Bitmap?>(null, url) { value = null; if (url != null) value = CoverImages.load(url) }
     Box(modifier.background(Ds.colors.backgroundSecondary), contentAlignment = Alignment.Center) {

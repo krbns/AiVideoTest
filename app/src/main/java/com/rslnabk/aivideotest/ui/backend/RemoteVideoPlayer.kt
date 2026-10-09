@@ -7,6 +7,11 @@ import androidx.compose.runtime.*
 import androidx.compose.runtime.saveable.Saver
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.Alignment
+import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.verticalScroll
+import androidx.compose.ui.draw.clip
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
@@ -18,7 +23,7 @@ import com.rslnabk.aivideotest.ui.common.DsButton
 import com.rslnabk.aivideotest.ui.theme.Ds
 
 /** Only a verified local video file reaches the platform playback surface. */
-@Composable fun RemoteVideoPlayer(local: LocalPhoto, id: String) {
+@Composable fun RemoteVideoPlayer(local: LocalPhoto, id: String, modifier: Modifier = Modifier) {
     var paused by rememberSaveable(id) { mutableStateOf(false) }
     var view by remember { mutableStateOf<VideoView?>(null) }
     var position by rememberSaveable(id, stateSaver = Saver<Int, Int>(
@@ -29,16 +34,17 @@ import com.rslnabk.aivideotest.ui.theme.Ds
     var resumed by remember { mutableStateOf(false) }
     val latestPaused by rememberUpdatedState(paused)
     val latestPosition by rememberUpdatedState(position)
-    Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
-        Box(Modifier.fillMaxWidth().heightIn(min = 180.dp, max = 500.dp).aspectRatio(local.aspectRatio ?: (16f / 9f)).background(Ds.colors.backgroundSecondary)) {
-            AndroidView(factory = { context -> VideoView(context).also { view = it } }, modifier = Modifier.fillMaxSize().testTag("remote_video"),
-                onRelease = { position = it.currentPosition.coerceAtLeast(position); it.stopPlayback(); view = null })
-            if (!ready) local.poster?.let { LocalPhotoImage(it, Modifier.matchParentSize()) }
-        }
+    Box(modifier.defaultMinSize(minHeight = 180.dp).clip(RoundedCornerShape(32.dp)).background(Ds.colors.backgroundPrimary), contentAlignment = Alignment.Center) {
+        AndroidView(factory = { context -> VideoView(context).also { view = it } },
+            modifier = Modifier.fillMaxWidth().aspectRatio(local.aspectRatio ?: (16f / 9f)).testTag("remote_video"),
+            onRelease = { position = it.currentPosition.coerceAtLeast(position); it.stopPlayback(); view = null })
+        if (!ready) local.poster?.let { LocalPhotoImage(it, Modifier.matchParentSize()) }
         if (error) {
-            androidx.compose.material3.Text(stringResource(R.string.backend_video_playback_error), color = Ds.colors.accentRed)
-            DsButton(stringResource(R.string.retry)) { retry++ }
-        } else DsButton(stringResource(if (paused) R.string.play else R.string.pause), Modifier.testTag("remote_playback"), enabled = ready) { paused = !paused }
+            Column(Modifier.align(Alignment.Center).background(Ds.colors.backgroundPrimaryAlpha, RoundedCornerShape(20.dp)).verticalScroll(rememberScrollState()).padding(20.dp), verticalArrangement = Arrangement.spacedBy(12.dp)) {
+                androidx.compose.material3.Text(stringResource(R.string.backend_video_playback_error), color = Ds.colors.accentRed)
+                DsButton(stringResource(R.string.retry)) { retry++ }
+            }
+        } else DsButton(stringResource(if (paused) R.string.play else R.string.pause), Modifier.align(Alignment.BottomEnd).padding(16.dp).testTag("remote_playback"), enabled = ready) { paused = !paused }
     }
     LifecycleResumeEffect(id) {
         resumed = true

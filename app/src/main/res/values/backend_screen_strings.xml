@@ -1,0 +1,26 @@
+<resources>
+    <string name="backend_try_effect">Try this effect</string>
+    <string name="backend_effect_details_hint">Scroll for effect details</string>
+    <string name="backend_job_failed">Failed</string>
+    <string name="backend_job_failed_refunded">Failed · credits refunded</string>
+    <string name="backend_like_rate">Like us, Rate us</string>
+    <string name="backend_share_app_text">Create photos and videos with AI in AiVideoTest.</string>
+    <string name="backend_notifications_pending">Notifications for server creations are not available yet. You can check your creations in Library.</string>
+    <string name="backend_purchases_pending">Purchases and purchase restoration are not available yet. Your current balance and subscription come from your account.</string>
+    <string name="backend_privacy_pending">The privacy policy is not available yet.</string>
+    <string name="backend_terms_pending">The terms and conditions are not available yet.</string>
+    <string name="backend_clear_cache_body">Clear temporary previews and saved account data? Your session, history, reference photos, downloaded creations and exported files will be kept.</string>
+    <string name="backend_copy_account">Copy account ID</string>
+    <string name="backend_plan_value">Plan: %1$s</string>
+    <string name="backend_expiry_value">Subscription expires: %1$s</string>
+    <string name="backend_renews">Automatic renewal is enabled.</string>
+    <string name="backend_no_renewal">Automatic renewal is disabled.</string>
+    <string name="backend_available_products">Available plans and credits</string>
+    <string name="backend_write_review">Write a review</string>
+    <string name="backend_feedback_local">Save a draft on this device. It will not be sent or published.</string>
+    <string name="backend_good_reference">Choose clear, well-lit photos that match the effect. Add the required number of photos on the next screen.</string>
+    <string name="backend_bad_reference">Avoid blurred or obstructed subjects and unrelated photos.</string>
+    <string name="backend_view_details">Creation details</string>
+    <string name="backend_creating_body">Your creation is being prepared. You can return to it from Library. Its status updates while the app is open.</string>
+    <string name="backend_model_label">Model</string>
+</resources>

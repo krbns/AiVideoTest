@@ -57,15 +57,16 @@ class BackendVideoUiTest {
     @Test fun cancelAndDeleteRequireConfirmationAndPlaybackCanPause() = fixture { f ->
         compose.onNodeWithTag("remote_generate").performScrollTo().performClick()
         compose.waitUntil(10000) { f.controller.state.value!!.phase == PhotoPhase.ACTIVE }
-        compose.onNodeWithTag("remote_cancel").performScrollTo().performClick()
+        compose.onNodeWithTag("remote_cancel").assertIsDisplayed().performClick()
         compose.onNodeWithText("Cancel").performClick(); assertEquals(0, f.cancels.get())
         f.status = "completed"
         compose.waitUntil(10000) { f.controller.state.value!!.local != null }
-        compose.onNodeWithTag("remote_video").performScrollTo()
+        compose.onNodeWithTag("remote_video").assertIsDisplayed()
         compose.waitUntil(10000) { runCatching { compose.onNodeWithTag("remote_playback").assertIsEnabled() }.isSuccess }
-        compose.onNodeWithTag("remote_playback").performScrollTo().assertIsEnabled().performClick()
+        compose.onNodeWithTag("remote_playback").assertIsDisplayed().assertIsEnabled().performClick()
         compose.onNodeWithTag("remote_playback").assertTextContains("Play")
-        compose.onNodeWithTag("remote_delete").performScrollTo().performClick()
+        compose.onNodeWithTag("remote_options").performClick()
+        compose.onNodeWithTag("remote_delete").performClick()
         assertEquals(0, f.deletes.get())
         compose.onNodeWithTag("remote_action_confirm").performClick()
         compose.waitUntil(10000) { f.deletes.get() == 1 && f.controller.state.value!!.job == null }

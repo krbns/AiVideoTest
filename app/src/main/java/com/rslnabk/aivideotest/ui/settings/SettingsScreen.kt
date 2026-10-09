@@ -77,8 +77,8 @@ import com.rslnabk.aivideotest.ui.theme.Ds
         }
     }
 }
-@Composable private fun SectionTitle(title: Int) { Text(stringResource(title), Modifier.padding(top = 18.dp, bottom = 6.dp), style = Ds.type.headlineEmphasized) }
-@Composable private fun SettingsRow(title: Int, icon: Int, tag: String, detail: String? = null, enabled: Boolean = true, action: () -> Unit) {
+@Composable internal fun SectionTitle(title: Int) { Text(stringResource(title), Modifier.padding(top = 18.dp, bottom = 6.dp), style = Ds.type.headlineEmphasized) }
+@Composable internal fun SettingsRow(title: Int, icon: Int, tag: String, detail: String? = null, enabled: Boolean = true, action: () -> Unit) {
     Row(Modifier.fillMaxWidth().background(Ds.colors.backgroundSecondary, RoundedCornerShape(16.dp)).clickable(enabled = enabled, onClick = action)
         .heightIn(min = 56.dp).padding(16.dp).testTag(tag), verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(12.dp)) {
         DsIcon(icon, null, if (enabled) Ds.colors.accentPrimary else Ds.colors.labelQuaternary)

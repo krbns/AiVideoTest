@@ -103,7 +103,8 @@ class BackendPhotoUiTest {
                     compose.onNodeWithTag("remote_recovery_confirm").performClick()
                     compose.waitUntil(10000) { controller.state.value!!.local != null }
                     assertEquals(choice, controller.state.value!!.submissionJobId); assertEquals(1, details.get())
-                    compose.onNodeWithTag("remote_save_gallery").performScrollTo().assertIsEnabled()
+                    compose.onNodeWithTag("remote_options").performClick()
+                    compose.onNodeWithTag("remote_save_gallery").assertIsEnabled()
                 } else {
                     compose.waitUntil(10000) { controller.state.value!!.recovery.searched && !controller.state.value!!.recovery.loading }
                     compose.onNodeWithTag("remote_recovery_empty").performScrollTo().assertIsDisplayed()
@@ -112,7 +113,8 @@ class BackendPhotoUiTest {
             } else {
                 compose.waitUntil(10000) { controller.state.value!!.local != null }
                 compose.onNodeWithTag("remote_job_status").assertTextEquals("Ready")
-                compose.onNodeWithTag("remote_save_gallery").performScrollTo().assertIsEnabled()
+                compose.onNodeWithTag("remote_options").performClick()
+                compose.onNodeWithTag("remote_save_gallery").assertIsEnabled()
             }
             assertEquals(1, posts.get())
         } finally {

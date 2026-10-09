@@ -40,7 +40,7 @@ import com.rslnabk.aivideotest.ui.theme.Ds
         DsIcon(resource, null, tint)
     }
 }
-@Composable fun ScreenHeader(title: String, back: (() -> Unit)? = null, trailing: @Composable () -> Unit) {
+@Composable fun ScreenHeader(title: String, back: (() -> Unit)? = null, centerTitle: Boolean = false, trailing: @Composable () -> Unit) {
     val style = if (back == null) Ds.type.largeTitleEmphasized else Ds.type.headlineEmphasized
     val naturalTitleWidth = rememberTextMeasurer().measure(title, style, maxLines = 1).size.width
     val color = Ds.colors.labelPrimary
@@ -67,18 +67,22 @@ import com.rslnabk.aivideotest.ui.theme.Ds
                 trailingItem.placeRelative(constraints.maxWidth - trailingItem.width, titleItem.height + gap)
             } else {
                 backItem?.placeRelative(0, (height - backItem.height) / 2)
-                titleItem.placeRelative(backItem?.let { it.width + gap } ?: 0, (height - titleItem.height) / 2)
+                val titleStart = backItem?.let { it.width + gap } ?: 0
+                val centeredStart = ((constraints.maxWidth - titleItem.width) / 2).coerceIn(titleStart,
+                    (constraints.maxWidth - trailingItem.width - gap - titleItem.width).coerceAtLeast(titleStart))
+                titleItem.placeRelative(if (centerTitle) centeredStart else titleStart, (height - titleItem.height) / 2)
                 trailingItem.placeRelative(constraints.maxWidth - trailingItem.width, (height - trailingItem.height) / 2)
             }
         }
     }
 }
-@Composable fun Segmented(labels: List<String>, icons: List<Int>, selected: Int, onSelect: (Int) -> Unit) {
+@Composable fun Segmented(labels: List<String>, icons: List<Int>, selected: Int, separate: Boolean = false, onSelect: (Int) -> Unit) {
     Row(Modifier.padding(horizontal = 16.dp, vertical = 12.dp).fillMaxWidth()
-        .clip(RoundedCornerShape(24.dp)).background(Ds.colors.backgroundSecondary).padding(4.dp)) {
+        .clip(RoundedCornerShape(24.dp)).background(if (separate) Color.Transparent else Ds.colors.backgroundSecondary).padding(if (separate) 0.dp else 4.dp),
+        horizontalArrangement = Arrangement.spacedBy(if (separate) 8.dp else 0.dp)) {
         labels.forEachIndexed { index, label ->
             Column(Modifier.weight(1f).clip(RoundedCornerShape(20.dp))
-                .background(if (selected == index) Ds.colors.accentPrimary else Color.Transparent)
+                .background(if (selected == index) Ds.colors.accentPrimary else if (separate) Ds.colors.backgroundSecondary else Color.Transparent)
                 .selectable(selected == index, role = Role.Tab) { onSelect(index) }
                 .heightIn(min = 48.dp).padding(8.dp), horizontalAlignment = Alignment.CenterHorizontally,
                 verticalArrangement = Arrangement.spacedBy(4.dp, Alignment.CenterVertically)) {
